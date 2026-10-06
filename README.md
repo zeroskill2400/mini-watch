@@ -160,7 +160,7 @@ Flask 기본 세션은 user_id·CSRF 토큰을 **서명한 쿠키**에 담는다
 
 ## 6교시 부록의 폴더 이동
 
-`support/general-react-backend/`의 전문은 부록 완성본의 `general/backend/`에 들어간다. 기존 일반 서비스 Python 파일·templates·static·sql을 이 폴더로 옮긴 구성이다.
+부록 완성본(day05-start)에서는 일반 서비스 Python 파일이 `general/backend/`에 들어간다. 기존 일반 서비스 Python 파일·templates·static·sql을 이 폴더로 옮긴 구성이다.
 
 `.env`와 `venv`는 배포물에 포함하지 않는다. 부록을 별도 폴더로 받은 학생은 `general/backend`에서 새 venv와 .env를 준비하고 동일한 `general_db`에 연결한다.
 
