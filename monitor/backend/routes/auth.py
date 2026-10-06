@@ -1,4 +1,4 @@
-from flask import Blueprint, request, session, render_template, redirect
+from flask import Blueprint, request, session
 from werkzeug.security import check_password_hash
 from auth_helpers import csrf_token, current_user, valid_csrf
 from repositories import users as user_repository
@@ -11,7 +11,6 @@ def me():
     return {"user": current_user(), "csrf_token": csrf_token()}
 
 
-@auth_bp.post("/auth/login")
 @auth_bp.post("/api/auth/login")
 def login():
     if not valid_csrf(request.headers.get("X-CSRF-Token")):
@@ -45,18 +44,3 @@ def logout():
         return {"error": "요청 확인 값이 올바르지 않습니다. 새로고침 후 다시 시도해 주세요."}, 403
     session.clear()
     return {"user": None, "csrf_token": csrf_token()}
-
-
-@auth_bp.get("/login")
-def login_page():
-    if current_user() is not None:
-        return redirect("/", code=303)
-    return render_template("login.html")
-
-
-@auth_bp.post("/logout")
-def logout_page():
-    if not valid_csrf(request.form.get("csrf_token")):
-        return render_template("error.html", message="요청 확인 값이 올바르지 않습니다. 새로고침해 주세요."), 403
-    session.clear()
-    return redirect("/login", code=303)

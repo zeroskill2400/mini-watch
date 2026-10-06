@@ -11,6 +11,7 @@
     <p class="error" role="alert">{{ error }}</p>
     {% endif %}
     <form action="/board/new" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <p>
             <label for="title">제목</label>
             <input id="title" name="title" value="{{ title }}">

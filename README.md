@@ -1,193 +1,180 @@
-# mini-watch 4일차 시작 코드
+# Mini Watch · Day4 시작 자료
 
-GitHub: https://github.com/zeroskill2400/mini-watch
+Day3 일반 서비스에는 로그인 성공 여부를 확인하는 코드만 있었다. Day4 시작 자료는 그 코드에 로그인 유지·로그아웃·글쓰기 접근 확인을 보완한 판이다.
 
-이 자료는 3일차에 완성한 일반 서비스의 게시글 CRUD·로그인 입력 화면과 감시 서비스의 기록 수집·조회 API다. 일반 화면은 Flask와 Jinja2로 만들었고, JavaScript는 기존 로그인 JSON API에 입력을 보내는 데 사용한다. 4일차에는 이 코드를 이어서 감시 화면을 만든다.
+감시 서비스에는 기존 요청 수집 API와 함께 운영자 인증·관찰 메모 API를 완성해 제공한다. Day4 본 수업에서는 이 API와 통신하는 React 화면을 만든다.
 
-수업을 정상적으로 따라왔다면 지금 사용하던 폴더와 DB를 계속 사용한다. 새 PC에서 시작하거나 완성 코드와 비교할 때만 저장소의 `day04-start`를 받는다. 기존 실습 폴더 위에 덮어쓰지 않는다.
+## 학생 시작 위치
 
-```bat
-git clone --branch day04-start https://github.com/zeroskill2400/mini-watch.git mini-watch-day04-start
-```
+- 저장소: https://github.com/zeroskill2400/mini-watch
+- Day4 시작 자료: https://github.com/zeroskill2400/mini-watch/tree/day04-start
+- 학생 폴더: `C:\work\mini-watch-day04`
+- 기존 Day3 폴더는 보존한다. 새 폴더에서 Day4 시작 자료를 사용하고, PostgreSQL의 기존 `general_db`·`monitor_db`는 그대로 연결한다.
 
-Git에는 코드·SQL·설정 예시만 들어 있다. 실제 `.env`, 가상환경, 이미 작성한 게시글과 수집 기록은 함께 오지 않는다.
+## 폴더별 준비
 
-## 실행 구조
+VS Code의 터미널 기본 프로필을 **Command Prompt**로 선택하고 새 터미널을 연다. 각 서비스 폴더에서 처음 한 번만 다음 순서로 실행한다.
 
-```text
-브라우저 → 일반 서비스 (Flask, 5100) → general_db
-                  │ 요청 결과(method/path/status_code)
-                  └────────→ 감시 서비스 (Flask, 5200) → monitor_db
-```
-
-일반 화면은 5100으로 접속한다. 감시 서비스는 일반 서비스가 보낸 기록을 수집하고 조회한다. 일반 사용자의 요청을 대신 전달하는 게이트웨이가 아니다.
-
-## 폴더
-
-```text
-mini-watch-day04-start/
-├─ .gitignore
-├─ README.md
-├─ general/
-│  ├─ app.py
-│  ├─ db.py
-│  ├─ post_rules.py
-│  ├─ request_logging.py
-│  ├─ requirements.txt
-│  ├─ .env.example
-│  ├─ create_user.py
-│  ├─ try_db.py
-│  ├─ try_hash.py
-│  ├─ try_login.py
-│  ├─ try_record.py
-│  ├─ try_send_event.py
-│  ├─ try_events.py
-│  ├─ repositories/
-│  │  ├─ __init__.py
-│  │  ├─ posts.py
-│  │  └─ users.py
-│  ├─ routes/
-│  │  ├─ __init__.py
-│  │  ├─ posts.py
-│  │  └─ auth.py
-│  ├─ templates/
-│  │  ├─ index.html
-│  │  ├─ detail.html
-│  │  ├─ error.html
-│  │  ├─ new.html
-│  │  ├─ edit.html
-│  │  ├─ delete.html
-│  │  └─ login.html
-│  ├─ static/
-│  │  ├─ style.css
-│  │  └─ login.js
-│  └─ sql/
-│     ├─ create_database.sql
-│     ├─ posts.sql
-│     ├─ post_ids.sql
-│     └─ users.sql
-└─ monitor/
-   └─ backend/
-      ├─ app.py
-      ├─ db.py
-      ├─ requirements.txt
-      ├─ .env.example
-      ├─ try_event.py
-      └─ sql/
-         ├─ create_database.sql
-         └─ http_events.sql
-```
-
-`app.py`는 앱 생성·설정·기능 등록·실행을 담당한다. 게시글 요청은 `routes/posts.py`, 로그인 요청은 `routes/auth.py`에서 처리한다. 두 파일은 입력을 읽고 검사한 뒤 DB 작업 함수를 부르고, HTML·JSON·이동 응답을 반환한다.
-
-게시글 SQL은 `repositories/posts.py`, 사용자 조회 SQL은 `repositories/users.py`에 있다. 두 모듈은 `db.py`의 연결 함수를 함께 사용한다. `post_rules.py`는 작성·수정의 공통 입력 검사를, `request_logging.py`는 요청 결과 기록과 감시 서비스 전송을 담당한다. `app.py`에서 `app.after_request(record_request)`로 기록 함수를 등록한다. `templates`, `static`, `sql`과 기존 연습 파일의 위치는 그대로다.
-
-## 1. Windows 터미널과 패키지 준비
-
-Python과 PostgreSQL이 설치된 PC에서 VS Code로 프로젝트 폴더를 연다. `Ctrl+Shift+P` → `Terminal: Select Default Profile` → **Command Prompt(CMD, 명령 프롬프트)**를 선택하고 새 터미널을 연다. 기존 터미널의 종류는 자동으로 바뀌지 않는다.
-
-VS Code에서 `general` 폴더를 오른쪽 클릭해 통합 터미널을 연다. 새로 받은 폴더에서는 처음 한 번 가상환경을 만든다.
+일반 서비스:
 
 ```bat
+cd C:\work\mini-watch-day04\general
 python -m venv venv
-```
-
-가상환경을 켠다. 입력 줄 앞에 `(venv)`가 붙는지 확인한다.
-
-```bat
 venv\Scripts\activate
-```
-
-패키지를 설치한다.
-
-```bat
 python -m pip install -r requirements.txt
 ```
 
-`monitor/backend` 폴더에서도 새 CMD를 열고 같은 순서로 그 폴더의 가상환경과 패키지를 준비한다. 두 폴더는 각각의 `requirements.txt`를 사용한다.
+감시 서비스는 새 터미널에서 준비한다.
 
-## 2. DB 접속 설정
+```bat
+cd C:\work\mini-watch-day04\monitor\backend
+python -m venv venv
+venv\Scripts\activate
+python -m pip install -r requirements.txt
+```
 
-`general/.env.example`을 같은 폴더에 `.env`라는 이름으로 저장하고 자기 PC의 DB 접속 값을 입력한다. `DB_NAME`은 `general_db`다.
+기존 venv를 준비했다면 `python -m venv venv`를 반복하지 않아도 된다. 실행할 때는 해당 폴더로 이동하고 `venv\Scripts\activate`를 실행한 다음 `python app.py`를 입력한다.
 
-`monitor/backend/.env.example`도 같은 폴더의 `.env`로 저장한다. 감시 서비스의 `DB_NAME`은 `monitor_db`다. 실제 비밀번호가 들어 있는 `.env`는 Git에서 제외한다.
+## 환경 설정
 
-## 3. 새 PC의 DB 준비
+두 폴더 모두 `.env.example`을 복사해 `.env`를 만든다. 기존 PostgreSQL 접속 정보를 사용하며 `DB_NAME`은 각 파일에 적힌 이름을 유지한다.
 
-이미 사용 중인 DB와 게시글이 있으면 초기 테이블·게시글 SQL을 다시 실행하지 않는다. 새 PC에서는 pgAdmin의 Query Tool에서 다음 순서로 실행한다.
+일반 서비스 `general/.env.example`:
 
-1. `postgres` DB에서 `general/sql/create_database.sql` 실행.
-2. `general_db`의 Query Tool을 새로 열고 `SELECT current_database();`로 연결 확인.
-3. `general/sql/posts.sql` 실행: 게시글 테이블과 초기 글 두 건 생성.
-4. `general/sql/post_ids.sql` 실행: 새 게시글 번호를 PostgreSQL이 발급하도록 설정.
-5. `general/sql/users.sql` 실행: 사용자 테이블 생성.
+```dotenv
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=general_db
+DB_USER=postgres
+DB_PASSWORD=YOUR_POSTGRES_PASSWORD
+SECRET_KEY=CHANGE_ME_TO_YOUR_OWN_RANDOM_SECRET
+```
 
-`post_ids.sql`은 일반 서버를 중지한 상태에서 실행한다. 기존 글을 지우지 않고, 현재 글 번호와 시퀀스의 마지막 번호 중 큰 값에서 이어 간다. 번호에는 빈 값이 생길 수 있으며 글 개수를 뜻하지 않는다. 이전 단계 DB를 쓰는 경우 이 준비를 아직 하지 않았을 때만 추가한다.
+감시 서비스 `monitor/backend/.env.example`:
 
-`general` 폴더에서 가상환경이 켜진 CMD로 실습 계정을 만든다.
+```dotenv
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=monitor_db
+DB_USER=postgres
+DB_PASSWORD=YOUR_POSTGRES_PASSWORD
+SECRET_KEY=CHANGE_ME_TO_YOUR_OWN_RANDOM_SECRET
+```
+
+`DB_PASSWORD`에는 본인 PC의 PostgreSQL 비밀번호를 넣는다. 각 서비스 터미널에서 다음 명령을 실행해 서로 다른 `SECRET_KEY`를 만든다.
+
+```bat
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+출력된 문자열을 해당 서비스 `.env`의 `SECRET_KEY=` 뒤에 붙인다. `.env`는 Git에서 제외하고, 키를 교안·스크린샷·채팅에 복사하지 않는다.
+
+`SECRET_KEY`는 로그인 비밀번호와 별개로 세션 쿠키의 서명을 만들고 확인하는 서버 설정이다. 기존 .env를 사용하는 경우 DB 값을 바꾸지 말고 이 한 줄을 추가한다.
+
+## SQL과 계정
+
+일반 서비스가 실행 중이면 `Ctrl+C`로 멈춘다. pgAdmin에서 `general_db`의 Query Tool을 열고 **general/sql/day04.sql 전문**을 실행한다.
+
+이 SQL은 기존 users·posts를 유지하며 글 번호가 기존 번호 뒤에서 이어지도록 시퀀스를 준비한다. 테이블 삭제나 게시글 초기화가 없다.
+
+pgAdmin에서 `monitor_db`의 Query Tool을 열고 **monitor/backend/sql/day04.sql 전문**을 실행한다. 기존 http_events를 유지하고 users·notes를 추가한다.
+
+각 서비스의 가상환경이 활성화된 터미널에서 실행한다.
 
 ```bat
 python create_user.py
 ```
 
-실습용 아이디는 `student`, 비밀번호는 `Learn123!`다. 같은 아이디가 이미 있으면 기존 계정을 유지한다. 이 값은 수업을 위한 공개 예시다.
+- 일반 서비스 공개 실습 계정: `student` / `Learn123!`
+- 감시 서비스 공개 실습 계정: `operator` / `Learn123!`
+- 같은 아이디가 있으면 비밀번호까지 그대로 유지한다. 이 경우 기존에 만든 계정의 비밀번호로 로그인한다.
+- `create_user.py`는 이름·비밀번호를 묻지 않고 위 실습 계정을 만든다. 비밀번호 해시만 DB에 저장한다.
+- 새 DB를 사용하는 경우에만 기존 create_database.sql로 `general_db` 또는 `monitor_db`를 먼저 만든다. 기존 수업 DB를 다시 만들지 않는다.
 
-감시 DB도 새로 준비한다.
+`notes`는 처음에 비어 있다. 목록·상세를 먼저 배우는 4교시에 예시 자료를 넣으려면 그 교시에서 소개한 `INSERT`를 한 번 실행하고, 이후 5교시에는 React 작성 폼으로 메모를 추가한다.
 
-1. `postgres` DB에서 `monitor/backend/sql/create_database.sql` 실행.
-2. `monitor_db`의 Query Tool을 새로 열고 `SELECT current_database();`로 연결 확인.
-3. `monitor/backend/sql/http_events.sql` 실행.
+## 실행과 접속
 
-## 4. 서버 실행
-
-감시 서버부터 실행한다. `monitor/backend` 폴더에서 CMD를 열고 가상환경을 켠다.
-
-```bat
-venv\Scripts\activate
-```
-
-그다음 서버를 실행한다.
+감시 서비스 터미널과 일반 서비스 터미널에서 각각 실행한다.
 
 ```bat
 python app.py
 ```
 
-일반 서버는 `general` 폴더에서 별도의 CMD를 열어 실행한다. 먼저 가상환경을 켠다.
+- 감시 서비스 확인: `http://127.0.0.1:5200/health`
+- 예상 JSON: `{"service":"monitor","status":"ok"}`
+- 일반 게시판: `http://127.0.0.1:5100/`
+- 일반 로그인: `http://127.0.0.1:5100/login`
+- 감시 React 화면은 1교시에서 만든 뒤 `http://127.0.0.1:5173`으로 접속한다.
 
-```bat
-venv\Scripts\activate
-```
+일반 게시판은 비로그인 상태에서도 목록·상세를 읽을 수 있다. 새 글·수정·삭제 주소에 들어가면 먼저 로그인 화면으로 이동한다.
 
-그다음 서버를 실행한다.
+## 일반 서비스 보완 확인
 
-```bat
-python app.py
-```
+1. 비로그인 상태에서 `/board/new`에 접속하면 `/login`으로 이동한다.
+2. `student` 계정으로 로그인하면 목록 화면으로 이동하고 아이디·로그아웃 버튼이 보인다.
+3. 글을 작성하고 새로고침해도 로그인 상태가 유지된다.
+4. 로그아웃하면 새 글·수정·삭제 주소에서 다시 로그인을 요구한다.
+5. 감시 React 운영자 로그인은 이 로그인과 별개다. 일반 서비스는 `general_session`, 감시 서비스는 `monitor_session` 쿠키를 쓴다.
 
-서버 코드를 바꾸면 해당 서버의 CMD에서 `Ctrl+C`로 중지한 뒤 `python app.py`로 다시 실행한다. 서버가 실행 중인 창에는 다른 명령을 입력하지 않는다.
+`static/login.js`가 JSON으로 로그인 요청을 보내며 로그인 성공 후 목록 주소로 이동한다. 쿠키 저장·전송은 브라우저가 처리하고 서버가 쿠키의 서명을 검증한다.
 
-## 5. 화면과 요청 기록 확인
+Flask 기본 세션은 user_id·CSRF 토큰을 **서명한 쿠키**에 담는다. 서버의 별도 세션 DB에 저장하거나 내용을 암호화한 구현이 아니므로 비밀번호와 비밀 데이터는 세션에 넣지 않는다.
 
-크롬 주소창에 http://127.0.0.1:5100/ 을 입력한다.
+서버는 로그인 상태를 검사할 때 users 테이블에 그 사용자 번호가 남아 있는지도 확인한다. UI에서 쓰기 버튼을 숨기는 것만으로 접근을 제어하지 않는다.
 
-- 목록의 게시글을 누르면 `/board/번호`에서 내용을 읽는다.
-- 새 게시글을 작성하면 POST 요청으로 DB에 저장하고 303 응답으로 상세 페이지로 이동한다.
-- 수정 화면에서 저장하면 같은 번호의 제목·내용이 바뀐다.
-- 삭제 화면을 여는 것만으로는 지워지지 않는다. 삭제 확인 버튼의 POST 요청으로 지운다.
-- 제목이나 내용이 비어 있으면 400 응답과 안내가 나오고 DB는 바뀌지 않는다.
+## 제공 코드에서 새로 보이는 이름
 
-http://127.0.0.1:5100/login 에서 실습용 아이디·비밀번호를 입력한다. JavaScript가 기존 `/auth/login`에 JSON을 보내고 결과 문구를 화면에 표시한다. 성공·실패를 판정하는 실습이며 로그인 상태 유지와 게시글 접근 제한은 아직 만들지 않았다. 게시글 CRUD는 로컬 교실 실습용 공개 기능이다.
+- `session`: Flask가 요청 쿠키의 서명을 확인해 읽고, 변경 후 응답 쿠키로 다시 보내는 사용자별 값.
+- `session.clear()`: 로그인 성공·로그아웃 때 이전 값을 비우는 메서드. 이후 필요한 user_id·새 CSRF 토큰을 채운다.
+- `SECRET_KEY`: 쿠키 서명·검증에 쓰는 서버 비밀 설정.
+- `current_user()`: session의 user_id로 현재 DB 사용자를 조회하는 함수.
+- `csrf_token()`: 현재 세션에 변경 요청을 확인할 임의 문자열이 없으면 만들고 돌려주는 함수.
+- `valid_csrf()`: 폼·요청 헤더의 문자열과 세션에 들어 있는 값을 비교하는 함수.
+- `before_request`: 해당 Blueprint의 URL 함수를 실행하기 전에 공통 인증 검사를 실행하는 Flask 기능.
+- `context_processor`: Jinja 템플릿에 login_user·csrf_token을 공통으로 전달하는 Flask 기능.
+- `no_cache()`: 인증·메모 응답을 브라우저 캐시에 남기지 않도록 `Cache-Control: no-store`를 붙이는 함수.
+- `error_handlers.py`: 잘못된 API 주소·요청 방법·DB 오류를 `{error: "안내"}` 형식으로 응답하는 모듈.
 
-기존 JSON 조회 주소 http://127.0.0.1:5100/posts/1 도 그대로 사용할 수 있다.
+쿠키는 브라우저가 자동 전송하므로 변경 요청에는 별도로 CSRF 확인 값을 붙인다. React는 `/api/auth/me` 응답의 값을 받아 `X-CSRF-Token` 헤더에, Jinja 폼은 숨김 입력 칸에 넣는다.
 
-감시 기록은 아래 주소에서 확인한다.
+## 감시 API 확인표
 
-- http://127.0.0.1:5200/health
-- http://127.0.0.1:5200/api/events
-- http://127.0.0.1:5200/api/events?event_type=login_failure
+| 요청 | 비로그인 | 로그인 후 결과 |
+|---|---:|---|
+| GET /health | 200 | 서비스 상태 |
+| GET /api/auth/me | 200 | user·csrf_token |
+| POST /api/auth/login | CSRF 필요 | user·새 csrf_token |
+| POST /api/auth/logout | CSRF 필요 | user:null·새 csrf_token |
+| POST /api/events | 201 | 일반 서버에서 기록 수집 |
+| GET /api/events | 401 | 최신 50건의 events |
+| GET /api/notes | 401 | notes 목록 |
+| GET /api/notes/번호 | 401 | note 한 건 또는 404 |
+| POST /api/notes | 401 | CSRF 확인 후 note·201 |
+| PUT /api/notes/번호 | 401 | CSRF 확인 후 note·200 |
+| DELETE /api/notes/번호 | 401 | CSRF 확인 후 message·200 |
 
-일반 서버는 메서드·경로·상태 코드만 기록으로 보낸다. 비밀번호와 요청 본문은 보내지 않는다. HTML 조회·CSS·JavaScript 조회·303 이동 응답도 기록될 수 있어, 화면을 한 번 열었다고 기록이 반드시 한 건만 생기는 것은 아니다.
+로그인 요청에 잘못된 아이디·비밀번호를 보내면 401, 제목·내용을 비우면 400, CSRF 값이 맞지 않으면 403, 없는 자료는 404다. 기존 `/auth/login` 경로도 일반 서비스에서 유지하며 이제 CSRF 확인과 세션 유지가 적용된다.
 
-감시 서버는 최근 50건을 반환한다. `occurred_at`은 감시 DB에 저장한 시각이다. 전송 실패 시 일반 응답은 유지하지만 해당 기록은 누락될 수 있으며 재전송 기능은 없다.
+`POST /api/events`는 일반 서비스가 자기 요청 기록을 보내는 기존 수집 경로다. 운영자 브라우저 세션을 붙이지 않으며, 감시 서비스가 일반 서비스 로그인을 대신하는 구조가 아니다.
 
-두 서비스와 DB를 그대로 두고 4일차 감시 화면 작업을 이어 간다.
+## 6교시 부록의 폴더 이동
+
+`support/general-react-backend/`의 전문은 부록 완성본의 `general/backend/`에 들어간다. 기존 일반 서비스 Python 파일·templates·static·sql을 이 폴더로 옮긴 구성이다.
+
+`.env`와 `venv`는 배포물에 포함하지 않는다. 부록을 별도 폴더로 받은 학생은 `general/backend`에서 새 venv와 .env를 준비하고 동일한 `general_db`에 연결한다.
+
+`db.py`는 자기 파일 옆의 `.env`를 읽으므로 새로운 배치에서도 `general/backend/.env`를 읽는다. 이전 Day3 폴더와 DB 데이터는 보존한다.
+
+부록은 `routes/api_posts.py`를 추가해 `/api/posts` JSON CRUD를 제공한다. Jinja 화면은 `http://127.0.0.1:5100/`에서 비교할 수 있고, React 화면은 `http://127.0.0.1:5174`에서 본다.
+
+두 화면은 같은 일반 backend와 general_db를 사용한다. React에서 추가한 글은 Jinja 목록에서도 확인할 수 있다.
+
+
+## 학습 이력
+
+try_*.py는 앞 수업의 연습 파일이다. 오늘 추가한 인증을 적용하기 전 요청 형식도 포함하므로 Day4의 실행 확인은 교안의 React 화면으로 진행한다.
+
+## 다음 수업 시작 자료
+
+https://github.com/zeroskill2400/mini-watch/tree/day05-start 에는 두 서비스의 React 화면까지 포함되어 있다. 본 브랜치는 그 출발점으로 frontend를 아직 만들지 않은 상태다.

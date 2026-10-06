@@ -1,6 +1,7 @@
 from flask import Blueprint, request, render_template, redirect
 from repositories import posts as post_repository
 from post_rules import validate_post
+from auth_helpers import current_user, valid_csrf
 
 posts_bp = Blueprint("posts", __name__)
 
@@ -21,6 +22,11 @@ def post_detail(post_id):
 
 @posts_bp.route("/board/new", methods=["GET", "POST"])
 def new_post():
+    if current_user() is None:
+        return redirect("/login", code=303)
+    if request.method == "POST" and not valid_csrf(request.form.get("csrf_token")):
+        return render_template("error.html", message="요청 확인 값이 올바르지 않습니다. 새로고침해 주세요."), 403
+
     if request.method == "GET":
         return render_template("new.html", title="", body="", error=None)
 
@@ -39,6 +45,11 @@ def new_post():
 
 @posts_bp.route("/board/<int:post_id>/edit", methods=["GET", "POST"])
 def edit_post(post_id):
+    if current_user() is None:
+        return redirect("/login", code=303)
+    if request.method == "POST" and not valid_csrf(request.form.get("csrf_token")):
+        return render_template("error.html", message="요청 확인 값이 올바르지 않습니다. 새로고침해 주세요."), 403
+
     post = post_repository.find_post(post_id)
     if post is None:
         return render_template("error.html", message="게시글을 찾을 수 없습니다."), 404
@@ -65,6 +76,11 @@ def edit_post(post_id):
 
 @posts_bp.route("/board/<int:post_id>/delete", methods=["GET", "POST"])
 def delete_post(post_id):
+    if current_user() is None:
+        return redirect("/login", code=303)
+    if request.method == "POST" and not valid_csrf(request.form.get("csrf_token")):
+        return render_template("error.html", message="요청 확인 값이 올바르지 않습니다. 새로고침해 주세요."), 403
+
     if request.method == "GET":
         post = post_repository.find_post(post_id)
         if post is None:
