@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from auth_helpers import api_access_error
 from event_rules import make_event
 from repositories import events as event_repository
 
@@ -22,9 +21,6 @@ def receive_event():
 
 @events_bp.get("/api/events")
 def get_events():
-    error = api_access_error()
-    if error:
-        return error
     event_type = request.args.get("event_type")
     allowed = {"login_success", "login_failure", "http_request"}
     if event_type is not None and event_type not in allowed:

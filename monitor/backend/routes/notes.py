@@ -1,14 +1,8 @@
 from flask import Blueprint, request
-from auth_helpers import api_access_error
 from note_rules import read_note
 from repositories import notes as note_repository
 
 notes_bp = Blueprint("notes", __name__)
-
-
-@notes_bp.before_request
-def require_login():
-    return api_access_error()
 
 
 @notes_bp.get("/api/notes")
