@@ -1,5 +1,28 @@
-name: m5d1-connected
+name: m5d1-sample
 services:
+  api:
+    build: ./flask
+    image: m5d1-flask:2
+    environment:
+      DB_HOST: db
+      DB_NAME: sample_db
+      DB_USER: sample
+      DB_PASSWORD: sample-only-pass
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+    - front-net
+    - data-net
+  web:
+    build: ./next
+    image: m5d1-next:2
+    environment:
+      API_URL: http://api:5000
+    depends_on:
+    - api
+    networks:
+    - front-net
   db:
     image: postgres:16-bookworm
     environment:
@@ -18,27 +41,6 @@ services:
       retries: 20
     networks:
     - data-net
-  api:
-    build: ./api
-    environment:
-      DB_HOST: db
-      DB_NAME: sample_db
-      DB_USER: sample
-      DB_PASSWORD: sample-only-pass
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-    - front-net
-    - data-net
-  web:
-    build: ./web
-    environment:
-      API_URL: http://api:5000
-    depends_on:
-    - api
-    networks:
-    - front-net
   gateway:
     image: nginx:1.28-alpine
     ports:
@@ -51,9 +53,7 @@ services:
     - api
     - web
 volumes:
-  sample-data:
-    external: true
-    name: m5d1-sample-data
+  sample-data: {}
 networks:
   front-net: {}
   data-net: {}

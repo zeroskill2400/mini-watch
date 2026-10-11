@@ -1,13 +1,16 @@
-# 5교시 후반 — HTTP 입구 추가
-앞 05-separated 단계와 앱 파일은 같다. gateway/default.conf와 Compose gateway를 추가했다.
-PC 포트는 gateway의 8085만 공개한다. web/api/db는 내부 서비스 이름으로 통신한다.
-기존 단계에서 docker compose down 후 이 폴더에서 다음을 실행한다.
-```cmd
-docker volume create m5d1-sample-data
-docker compose up -d --build
-```
-http://localhost:8085 : Next.js 화면
-http://localhost:8085/api/messages : Flask JSON
-화면은 Next 서버→Flask→DB 경로를 계속 쓰며, 브라우저의 /api 요청은 Nginx→Flask로 간다.
+# 06-gateway 비교 코드
 
-06은 비교 코드 단계 번호이다. 이 단계에서 작은 샘플을 완성하고 종료한 뒤 6교시의 프로젝트 적용으로 넘어간다.
+5교시 종료 상태. 같은 Compose에 gateway를 추가하고 브라우저 입구를 localhost:8085 하나로 모은다.
+
+수업에서는 C:\work\m5d1-sample 폴더의 compose.yaml 하나를 계속 수정한다.
+이 폴더는 해당 시점의 비교본이다. 단계 폴더를 동시에 실행하지 않는다.
+
+```cmd
+docker compose config --quiet
+docker compose up -d --build
+docker compose ps
+```
+
+종료는 docker compose down이다. DB 자료를 유지하려면 -v를 붙이지 않는다.
+4교시부터 sample-data는 Compose가 관리하며 docker volume create로 따로 만들지 않는다.
+제작 환경에서는 Docker 엔진과 Windows에서의 컨테이너 실기동을 검증하지 않았다.

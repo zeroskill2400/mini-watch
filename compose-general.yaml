@@ -1,4 +1,4 @@
-name: m5d1-mini
+name: m5d1-general
 services:
   general-db:
     image: postgres:16-bookworm
@@ -27,13 +27,14 @@ services:
       DB_USER: sample
       DB_PASSWORD: sample-only-pass
       SECRET_KEY: sample-general-session-key-not-for-production
-      MONITOR_URL: http://127.0.0.1:5999/api/events
+      MONITOR_URL: http://monitor-api:5000/api/events
     depends_on:
       general-db:
         condition: service_healthy
     networks:
     - general-front-net
     - general-data-net
+    - events-net
   general-gateway:
     image: nginx:1.28-alpine
     ports:
@@ -45,7 +46,10 @@ services:
     depends_on:
     - general-api
 volumes:
-  general-data: null
+  general-data: {}
 networks:
   general-front-net: {}
   general-data-net: {}
+  events-net:
+    external: true
+    name: m5d1-events

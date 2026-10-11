@@ -1,0 +1,7 @@
+name: m5d1-sample
+services:
+  api:
+    build: ./flask
+    image: m5d1-flask:2
+    ports:
+    - 127.0.0.1:5500:5000

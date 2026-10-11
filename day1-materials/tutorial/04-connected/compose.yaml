@@ -1,5 +1,27 @@
-name: m5d1-connected
+name: m5d1-sample
 services:
+  api:
+    build: ./flask
+    image: m5d1-flask:2
+    ports:
+    - 127.0.0.1:5500:5000
+    environment:
+      DB_HOST: db
+      DB_NAME: sample_db
+      DB_USER: sample
+      DB_PASSWORD: sample-only-pass
+    depends_on:
+      db:
+        condition: service_healthy
+  web:
+    build: ./next
+    image: m5d1-next:2
+    ports:
+    - 127.0.0.1:3300:3000
+    environment:
+      API_URL: http://api:5000
+    depends_on:
+    - api
   db:
     image: postgres:16-bookworm
     environment:
@@ -16,25 +38,5 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
-  api:
-    build: ./api
-    environment:
-      DB_HOST: db
-      DB_NAME: sample_db
-      DB_USER: sample
-      DB_PASSWORD: sample-only-pass
-    depends_on:
-      db:
-        condition: service_healthy
-  web:
-    build: ./web
-    environment:
-      API_URL: http://api:5000
-    ports:
-    - 127.0.0.1:3300:3000
-    depends_on:
-    - api
 volumes:
-  sample-data:
-    external: true
-    name: m5d1-sample-data
+  sample-data: {}
