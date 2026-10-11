@@ -1,4 +1,4 @@
-# 5교시 — 같은 앱을 두 망으로 나누기
+# 5교시 전반 — 같은 앱을 두 망으로 나누기
 앱 파일은 4교시와 같다. Compose의 networks만 바꾼 비교용 완성본이다.
 web=front-net, api=front-net+data-net, db=data-net.
 API와 DB에는 ports가 없다. DB로의 직접 접속과 API를 통한 DB 조회를 구별한다.
