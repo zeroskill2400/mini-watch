@@ -1,15 +1,25 @@
-# 5과목 Day1 공통 시작본
+# 5과목 Day1 Docker 적용 비교본
 
-4과목 day05-start의 일반 Flask·감시 Flask·React 소스와 Day5 Next.js 부록을 바탕으로 준비했다.
-기존 파일은 별도 원본에 보존하며 이 폴더에서만 합쳤다.
-감시 백엔드는 기존 세션 부록의 app/auth/notes/events/auth_helpers를 사용한다.
-Next.js에는 기존 메모 CRUD를 유지하면서 로그인·CSRF·요청 기록 화면을 연결했다.
+Windows CMD에서 이 폴더를 열고 실행한다.
 
-이 시작본에는 Dockerfile·Compose·게이트웨이 설정이 없다. 6교시에서 작은 샘플을 마친 뒤 추가한다.
-로컬 개발 주소는 일반 5100, 감시 API 5200, Next.js 3000이다.
-Docker 적용 결과는 같은 저장소의 day07-start 브랜치에서 비교한다.
-실제 계정 비밀값과 .env, DB 데이터, node_modules는 포함하지 않는다.
-공개 교육 예시 계정 student/operator는 create_user.py로 만든다. 비밀번호 Learn123!은 수업 예시이다.
+    docker compose up -d --build
+    docker compose exec general-api python create_user.py
+    docker compose exec monitor-api python create_user.py
+
+일반 http://localhost:8081 / 감시 http://localhost:8082
+일반 student / 감시 operator, 공개 실습 비밀번호 Learn123!
+DB 및 SECRET_KEY 값도 공개된 격리 로컬 수업용 값이다. 외부 배포용 설정이 아니다.
+감시 화면 로그인 후 기록 불러오기·메모 목록 불러오기를 누른다.
+
+종료: docker compose down
+재시작: docker compose up -d
+앱 재빌드 뒤에는 해당 gateway를 restart해 바뀐 컨테이너 주소를 다시 찾게 한다.
+예: docker compose up -d --build general-api → docker compose restart general-gateway
+down에는 -v를 붙이지 않는다. -v는 DB 볼륨까지 지운다.
+
+일반/감시 각각 front 망과 data 망을 사용하고 두 API만 events-net을 공유한다.
+이 비교본은 이전 수업 앱·DB 연결·세션 부록을 준비한 공통 시작본에 Docker 설정을 적용한 것이다.
+컨테이너 네트워크·Windows 실기동은 제작 환경에서 미검증이다.
 
 ## 수업 순서와 Git 시작점
 

@@ -1,8 +1,9 @@
 import json
+import os
 import requests
 from flask import current_app, request
 
-MONITOR_URL = "http://127.0.0.1:5200/api/events"
+MONITOR_URL = os.environ.get("MONITOR_URL", "http://127.0.0.1:5200/api/events")
 
 
 def record_request(response):
