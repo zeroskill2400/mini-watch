@@ -1,9 +1,6 @@
-# 05-separated 비교 코드
+# 4교시 비교 코드 — 네트워크 분리
 
-5교시 중간 상태. 같은 Compose의 네트워크를 front-net과 data-net으로 나눈다.
-
-수업에서는 C:\work\m5d1-sample 폴더의 compose.yaml 하나를 계속 수정한다.
-이 폴더는 해당 시점의 비교본이다. 단계 폴더를 동시에 실행하지 않는다.
+폴더 번호는 비교 단계 번호다. 교안은 같은 C:\work\m5d1-sample에서 이어간다. 각 비교 폴더는 동시에 실행하지 않는다.
 
 ```cmd
 docker compose config --quiet
@@ -11,6 +8,6 @@ docker compose up -d --build
 docker compose ps
 ```
 
-종료는 docker compose down이다. DB 자료를 유지하려면 -v를 붙이지 않는다.
-4교시부터 sample-data는 Compose가 관리하며 docker volume create로 따로 만들지 않는다.
-제작 환경에서는 Docker 엔진과 Windows에서의 컨테이너 실기동을 검증하지 않았다.
+기존 sample-data 볼륨을 재사용한다. 빈 환경에서는 init.sql의 첫 문장만 보인다. 두 번째 문장은 3교시 INSERT 실습으로 추가한다.
+
+해당 단계만 비교한 뒤 종료할 때는 docker compose down을 사용한다. 연속 수업에서는 교안의 다음 단계로 그대로 이어간다. DB 자료를 남기려면 -v를 붙이지 않는다.

@@ -1,8 +1,8 @@
 export default function Home() {
   return (
     <main>
-      <h1>이미지를 다시 빌드한 화면입니다.</h1>
-      <p>이 페이지는 빌드한 뒤 실행하고 있습니다.</p>
+      <h1>Next.js 화면입니다.</h1>
+      <p>같은 화면을 로컬과 Docker에서 확인합니다.</p>
     </main>
   );
 }

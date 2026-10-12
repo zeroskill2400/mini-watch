@@ -1,9 +1,6 @@
-# 03-network 비교 코드
+# 2교시 비교 코드 — 기본 망 이름 요청
 
-3교시 비교 상태. api와 web의 코드는 2교시 종료와 같고 Compose 기본 망에서 서비스 이름 통신을 확인한다.
-
-수업에서는 C:\work\m5d1-sample 폴더의 compose.yaml 하나를 계속 수정한다.
-이 폴더는 해당 시점의 비교본이다. 단계 폴더를 동시에 실행하지 않는다.
+폴더 번호는 비교 단계 번호다. 교안은 같은 C:\work\m5d1-sample에서 이어간다. 각 비교 폴더는 동시에 실행하지 않는다.
 
 ```cmd
 docker compose config --quiet
@@ -11,14 +8,10 @@ docker compose up -d --build
 docker compose ps
 ```
 
-종료는 docker compose down이다. DB 자료를 유지하려면 -v를 붙이지 않는다.
-4교시부터 sample-data는 Compose가 관리하며 docker volume create로 따로 만들지 않는다.
-제작 환경에서는 Docker 엔진과 Windows에서의 컨테이너 실기동을 검증하지 않았다.
-
-web 안에서 Flask에 요청하기:
+web에서 Flask에 요청한다.
 
 ```cmd
 docker compose exec web curl --max-time 3 http://api:5000/api/hello
 ```
 
-web 이미지에는 curl이 포함되어 있다. 요청이 3초 안에 끝나지 않으면 중단한다.
+해당 단계만 비교한 뒤 종료할 때는 docker compose down을 사용한다. 연속 수업에서는 교안의 다음 단계로 그대로 이어간다. DB 자료를 남기려면 -v를 붙이지 않는다.

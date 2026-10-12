@@ -1,0 +1,24 @@
+name: m5d1-monitor
+services:
+  monitor-db:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_DB: monitor_db
+      POSTGRES_USER: sample
+      POSTGRES_PASSWORD: sample-only-pass
+    volumes:
+    - monitor-data:/var/lib/postgresql/data
+    - ./monitor/backend/sql/docker-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+    - monitor-data-net
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U sample -d monitor_db
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  monitor-data: {}
+networks:
+  monitor-data-net: {}

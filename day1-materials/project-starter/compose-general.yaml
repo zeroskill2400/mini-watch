@@ -1,0 +1,24 @@
+name: m5d1-general
+services:
+  general-db:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_DB: general_db
+      POSTGRES_USER: sample
+      POSTGRES_PASSWORD: sample-only-pass
+    volumes:
+    - general-data:/var/lib/postgresql/data
+    - ./general/sql/docker-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+    - general-data-net
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U sample -d general_db
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  general-data: {}
+networks:
+  general-data-net: {}

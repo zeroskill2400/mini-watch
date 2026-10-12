@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    body TEXT NOT NULL UNIQUE
+);
+INSERT INTO messages (body) VALUES ('DB에서 읽은 문장입니다.')
+ON CONFLICT (body) DO NOTHING;
