@@ -7,6 +7,13 @@ Windows CMD에서 이 폴더를 연다. 일반 서비스와 감시 서비스를 
 docker network create m5d1-events
 docker compose -f compose-monitor.yaml config --quiet
 docker compose -f compose-monitor.yaml up -d --build
+docker compose -f compose-monitor.yaml ps
+curl -i http://localhost:8082/api/auth/me
+```
+
+감시 DB의 healthy와 API의 HTTP 200을 확인한 뒤 아래를 실행한다. 시작 중 502가 나오면 logs monitor-api monitor-web으로 준비 상태를 확인하고 다시 요청한다.
+
+```cmd
 docker compose -f compose-monitor.yaml exec monitor-api python create_user.py
 docker compose -f compose-general.yaml config --quiet
 docker compose -f compose-general.yaml up -d --build
@@ -32,6 +39,6 @@ down에는 -v를 붙이지 않는다. 공유 외부 망은 위 down 명령으로
 API나 Next 앱을 재빌드한 뒤에는 해당 gateway를 restart해 바뀐 컨테이너 주소를 다시 찾게 한다.
 예: docker compose -f compose-general.yaml up -d --build general-api 다음 docker compose -f compose-general.yaml restart general-gateway
 
-작은 샘플의 compose.yaml과 이 프로젝트의 두 Compose 파일은 서로 다른 실습 폴더에 둔다.
+1~4교시 샘플은 compose.yaml 하나를 확장하고 5교시는 compose-app.yaml·compose-data.yaml로 나눈다. 6교시는 별도 미니프로젝트 폴더의 compose-general.yaml·compose-monitor.yaml을 완성한다. 시작틀은 day06-start의 day1-materials/project-starter이며, 이 브랜치의 루트는 정답 적용 상태다.
 이전 단일 m5d1-mini 프로젝트에서 넘어오면 볼륨 이름도 달라진다. 기존 DB를 옮기는 절차는 이 새 시작본 실습에 포함하지 않는다.
 컨테이너 네트워크·Windows 실기동은 제작 환경에서 미검증이다.
