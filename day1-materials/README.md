@@ -5,7 +5,7 @@
 실프로젝트는 compose-general.yaml과 compose-monitor.yaml 두 파일로 일반·감시 서비스를 각각 실행한다.
 
 - tutorial: 교시별 비교 코드. 필요한 단계만 별도 폴더에서 확인하며 단계별 폴더를 동시에 실행하지 않는다.
-- project-docker: 프로젝트에 적용할 14개 파일. 두 Compose 파일과 Dockerfile·DB 초기화·게이트웨이 설정 등을 담는다.
+- project-docker: 프로젝트에 적용할 실행 파일과 설정. 두 Compose 파일과 Dockerfile·DB 초기화·게이트웨이 설정 등을 담는다.
 
 day06-start로 받은 프로젝트의 루트에서 Windows CMD로 적용한다.
 day07-start 비교본에는 이미 루트에 적용되어 있다.

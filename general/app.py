@@ -16,4 +16,4 @@ app.after_request(no_cache)
 app.after_request(record_request)
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5100)
+    app.run(host="0.0.0.0", port=5000)
