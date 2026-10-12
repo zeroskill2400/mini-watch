@@ -21,3 +21,7 @@ def messages():
     ) as conn:
         rows = conn.execute("SELECT body FROM messages ORDER BY id").fetchall()
     return {"messages": [row[0] for row in rows]}
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
