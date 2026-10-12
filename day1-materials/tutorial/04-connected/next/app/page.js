@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import { connection } from "next/server";
 
-export default async function Home() {
+async function Messages() {
   await connection();
   const response = await fetch(`${process.env.API_URL}/api/messages`, {
     cache: "no-store",
@@ -10,14 +11,22 @@ export default async function Home() {
   }
   const data = await response.json();
   return (
+    <ul>
+      {data.messages.map((message) => (
+        <li key={message}>{message}</li>
+      ))}
+    </ul>
+  );
+}
+
+export default function Home() {
+  return (
     <main>
       <h1>Next.js → Flask → PostgreSQL</h1>
       <p>Next.js 서버가 Flask의 응답을 받아 만든 화면입니다.</p>
-      <ul>
-        {data.messages.map((message) => (
-          <li key={message}>{message}</li>
-        ))}
-      </ul>
+      <Suspense fallback={<p>문장을 불러오는 중입니다.</p>}>
+        <Messages />
+      </Suspense>
     </main>
   );
 }
