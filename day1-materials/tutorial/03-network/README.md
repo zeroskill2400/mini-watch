@@ -14,3 +14,11 @@ docker compose ps
 종료는 docker compose down이다. DB 자료를 유지하려면 -v를 붙이지 않는다.
 4교시부터 sample-data는 Compose가 관리하며 docker volume create로 따로 만들지 않는다.
 제작 환경에서는 Docker 엔진과 Windows에서의 컨테이너 실기동을 검증하지 않았다.
+
+web 안에서 Flask에 요청하기:
+
+```cmd
+docker compose exec web curl --max-time 3 http://api:5000/api/hello
+```
+
+web 이미지에는 curl이 포함되어 있다. 요청이 3초 안에 끝나지 않으면 중단한다.
