@@ -5,7 +5,7 @@
 - 조회·작성·수정·삭제 요청을 감시 표에서 구분한다.
 - 일반 화면 결과와 요청의 방법·경로·상태를 함께 확인한다.
 ```plain text
-C:\work\mini-watch-day08\
+C:\work\mini-watch-m5d3\
 ├─ general\                  ← 요청을 처리하고 기록을 보냄
 ├─ monitor\backend\          ← 기록을 받고 DB에 저장
 ├─ monitor\next-frontend\    ← 저장된 기록을 표로 조회
@@ -19,8 +19,8 @@ Windows CMD를 사용한다. 아래 명령은 새 폴더에 코드를 받고 VS 
 Windows CMD
 ```plain text
 cd /d C:\work
-git clone --branch day08-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day08
-cd mini-watch-day08
+git clone --branch m5d3-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-m5d3
+cd mini-watch-m5d3
 code .
 ```
 Git은 코드·SQL·설정 예시를 가져온다. 실제 DB 데이터와 계정은 복사하지 않는다. 같은 이름의 폴더가 이미 있다면 아래의 준비 중 막히면을 펼쳐 새 폴더로 받는다.
@@ -39,7 +39,28 @@ Windows CMD
 docker compose -f compose-monitor.yaml up -d --build
 docker compose -f compose-general.yaml up -d --build
 ```
-앞 실습과 같은 Compose 프로젝트 이름과 로컬 DB 볼륨을 사용한다. 기존 계정·게시글·기록은 유지된다. 새 환경에서는 DB와 실행 확인용 게시글이 준비된다. 계정이 없다면 아래 명령으로 만든다. 빌드가 끝난 뒤 두 주소를 열어 일반 서비스와 감시 서비스 제목을 확인한다.
+앞 실습과 같은 Compose 프로젝트 이름과 로컬 DB 볼륨을 사용하므로 기존 계정·게시글·기록이 유지된다. 프로젝트 이름의 `m5d1`은 앞 실습의 DB를 이어 쓰기 위해 유지한 이름이다.
+새로 만드는 로컬 DB에서는 Compose가 `general/sql/docker-init.sql`과 `monitor/backend/sql/docker-init.sql`을 자동 실행해 테이블과 실행 확인용 게시글을 준비한다. SQL 파일을 따로 실행할 필요는 없다.
+<details>
+<summary>DB가 자동으로 준비되는 설정 확인하기</summary>
+	아래 설정은 두 YAML에 이미 들어 있다. 따로 입력하거나 수정하지 않고 그대로 실행한다.
+	`compose-general.yaml`의 일반 DB 설정 일부
+	```yaml
+volumes:
+- general-data:/var/lib/postgresql/data
+# 새 DB 볼륨이면 이 SQL을 자동 실행한다.
+- ./general/sql/docker-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+	```
+	`compose-monitor.yaml`의 감시 DB 설정 일부
+	```yaml
+volumes:
+- monitor-data:/var/lib/postgresql/data
+# 새 DB 볼륨이면 이 SQL을 자동 실행한다.
+- ./monitor/backend/sql/docker-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+	```
+</details>
+초기화 SQL은 DB가 처음 만들어질 때만 실행되며 기존 DB에는 다시 적용되지 않는다. 필요한 테이블이 없다는 오류가 나오면 준비 중 막히면의 로그를 확인하고 강사와 기존 DB 상태를 확인한다.
+빌드가 끝난 뒤 두 주소를 열어 일반 서비스와 감시 서비스 제목을 확인한다.
 계정이 이미 있으면 기존 아이디·비밀번호를 사용한다. 새 환경이라면 아래 명령을 하나씩 실행해 일반은 student, 감시는 operator와 본인이 정한 12자 이상 비밀번호를 직접 입력한다. 입력한 비밀번호 글자는 화면에 표시되지 않는다.
 Windows CMD
 ```plain text
@@ -55,12 +76,12 @@ docker compose -f compose-monitor.yaml exec monitor-api python create_user.py
 2. 감시 화면에서 기록 불러오기를 누르고 종류·방법·경로·상태 열을 확인한다.
 <details>
 <summary>준비 중 막히면</summary>
-	기본 폴더가 이미 있다면 아래처럼 clone의 마지막 이름과 다음 cd를 함께 바꾼다. 이후에는 새로 받은 mini-watch-day08-2 폴더에서 작업한다.
+	기본 폴더가 이미 있다면 아래처럼 clone의 마지막 이름과 다음 cd를 함께 바꾼다. 이후에는 새로 받은 mini-watch-m5d3-2 폴더에서 작업한다.
 	Windows CMD
 	```plain text
 cd /d C:\work
-git clone --branch day08-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day08-2
-cd mini-watch-day08-2
+git clone --branch m5d3-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-m5d3-2
+cd mini-watch-m5d3-2
 code .
 	```
 	code .을 찾지 못하면 VS Code의 파일 → 폴더 열기로 새로 받은 폴더를 연다. 접속이 안 되면 아래 명령에서 서비스 상태와 감시 API 로그를 확인한다.
@@ -74,7 +95,7 @@ docker compose -f compose-general.yaml logs --tail 20 general-api
 	일반 화면만 열리고 기록이 없으면 일반 앱의 MONITOR\_URL이 감시 수집 API를 가리키는지 확인하고, 두 앱의 EVENT\_TOKEN이 같은지도 확인한다. 기록 전송 실패 경고는 general-api 로그에서 찾는다. 지금 제공한 로컬 Compose에는 연결값이 준비되어 있다. 기존 계정이 있다는 안내가 나오면 비밀번호를 덮어쓰지 않고 기존 비밀번호를 사용한다.
 </details>
 ## 2단계. 일반 화면에서 새 글 쓰기
-게시글이 없는 새 DB에서도 시작할 수 있도록 이번 실습용 글을 하나 만든다. 입력한 글 내용은 일반 DB에, 그 요청의 기록은 감시 DB에 각각 남는다.
+이번 관찰에 사용할 실습용 글을 하나 만든다. 입력한 글 내용은 일반 DB에, 그 요청의 기록은 감시 DB에 각각 남는다.
 실습용 게시글 만들기
 1. 일반 화면에서 새 게시글 작성을 누른다.
 2. 제목은 Day3 수집 연습, 내용은 일반 서비스 행동을 확인한다.로 입력하고 게시글 저장을 누른다.

@@ -8,8 +8,8 @@ Windows CMD에서 새 폴더에 받는다.
 
 ```cmd
 cd /d C:\work
-git clone --branch day08-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day08
-cd mini-watch-day08
+git clone --branch m5d3-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-m5d3
+cd mini-watch-m5d3
 code .
 ```
 
@@ -31,6 +31,12 @@ docker network create m5d1-events
 docker compose -f compose-monitor.yaml up -d --build
 docker compose -f compose-general.yaml up -d --build
 ```
+
+앞 실습과 같은 Compose 프로젝트 이름과 로컬 DB 볼륨을 사용하므로 기존 계정·게시글·기록이 유지된다. 프로젝트 이름의 `m5d1`은 앞 실습의 DB를 이어 쓰기 위해 유지한 이름이다.
+
+새로 만드는 로컬 DB에서는 Compose가 `general/sql/docker-init.sql`과 `monitor/backend/sql/docker-init.sql`을 자동 실행해 테이블과 실행 확인용 게시글을 준비한다. SQL 파일을 따로 실행할 필요는 없다.
+
+초기화 SQL은 DB가 처음 만들어질 때만 실행되며 기존 DB에는 다시 적용되지 않는다. 필요한 테이블이 없다는 오류가 나오면 [1교시 교안](day3-materials/lessons/lesson1.md)의 “준비 중 막히면”에서 로그를 확인하고 강사와 기존 DB 상태를 확인한다.
 
 일반 http://localhost:8081 / 감시 http://localhost:8082. 기존 계정이 있으면 사용한다. 새 DB라면 다음을 하나씩 실행해 일반 student, 감시 operator를 생성하고 본인이 정한 새 비밀번호를 직접 입력한다. 기존 계정 비밀번호는 덮어쓰지 않는다.
 

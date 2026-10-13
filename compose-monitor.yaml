@@ -8,6 +8,8 @@ services:
       POSTGRES_PASSWORD: sample-only-pass
     volumes:
     - monitor-data:/var/lib/postgresql/data
+    # 새 DB 볼륨이면 아래 SQL을 첫 실행에 자동 적용한다. 수동 실행은 필요 없다.
+    # 기존 DB 볼륨에는 다시 적용하지 않는다.
     - ./monitor/backend/sql/docker-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
     - monitor-data-net
