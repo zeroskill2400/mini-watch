@@ -1,40 +1,48 @@
-# 5과목 Day1 공통 시작본
+# mini-watch — 5과목 Day3 시작 자료
 
-4과목 day05-start의 일반 Flask·감시 Flask·React 소스와 Day5 Next.js 부록을 바탕으로 준비했다.
-기존 파일은 별도 원본에 보존하며 이 폴더에서만 합쳤다.
-감시 백엔드는 기존 세션 부록의 app/auth/notes/events/auth_helpers를 사용한다.
-Next.js에는 기존 메모 CRUD를 유지하면서 로그인·CSRF·요청 기록 화면을 연결했다.
+Day2 완성 비교본에 게시글 관련 요청 종류를 구분하는 준비 코드를 포함했다. general의 조회·작성·수정·삭제 요청을 monitor에서 수집·조회한다. 소스의 DB 스키마는 Day2와 같다. 실제 계정·DB 데이터·비밀값은 Git clone으로 복제되지 않는다.
 
-이 시작본의 프로젝트 루트에는 Dockerfile·Compose·게이트웨이 설정을 아직 적용하지 않았다. 5교시에서 작은 샘플을 완성한 뒤 6교시에서 추가한다.
-로컬 개발 주소는 일반 5100, 감시 API 5200, Next.js 3000이다.
-Docker 적용 결과는 같은 저장소의 day07-start 브랜치에서 비교한다.
-실제 계정 비밀값과 .env, DB 데이터, node_modules는 포함하지 않는다.
-공개 교육 예시 계정 student/operator는 create_user.py로 만든다. 비밀번호 Learn123!은 수업 예시이다.
+## 1교시 로컬 시작
 
-## 수업 순서와 Git 시작점
-
-1~4교시는 교안의 작은 코드를 직접 작성하고 같은 폴더의 compose.yaml을 확장한다. 5교시에는 샘플을 앱·DB용 Compose 두 개로 나눈다.
-샘플의 전체 응답과 독립 실행을 확인한 뒤 6교시 종합 실습에서 일반·감시 Compose 두 개를 직접 완성한다.
-실프로젝트는 compose-general.yaml과 compose-monitor.yaml 두 파일을 각각 실행한다.
-두 API는 외부 네트워크 m5d1-events로 연결한다.
-
-시작 코드: https://github.com/zeroskill2400/mini-watch/tree/day06-start
+Windows CMD에서 새 폴더에 받는다.
 
 ```cmd
 cd /d C:\work
-git clone --branch day06-start https://github.com/zeroskill2400/mini-watch.git mini-watch-day06
-cd mini-watch-day06
+git clone --branch day08-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day08
+cd mini-watch-day08
+code .
 ```
 
-general·monitor는 기존 앱이며 day1-materials는 비교 코드와 적용할 설정이다.
-6교시 시작틀은 day1-materials/project-starter다. 정답이 아닌 DB만 있는 Compose 두 개에서 출발한다. 요구사항·완료 기준·힌트·접힌 정답은 6교시 교안을 따른다.
-
-완성 비교 코드: https://github.com/zeroskill2400/mini-watch/tree/day07-start
-비교가 필요하면 기존 작업 폴더를 유지하고 별도 폴더로 받는다.
+Docker Desktop 실행 후 공유 망이 있는지 확인한다. 기존 망은 유지하며 없는 경우에만 만든다.
 
 ```cmd
-cd /d C:\work
-git clone --branch day07-start https://github.com/zeroskill2400/mini-watch.git mini-watch-day07-compare
+docker network inspect m5d1-events
 ```
 
-교안: https://www.notion.so/3f6ae3d1800c81c59d93e70132b2157f
+없는 경우:
+
+```cmd
+docker network create m5d1-events
+```
+
+같은 폴더에서 감시와 일반을 실행한다. 앞 실습과 같은 프로젝트/볼륨 이름으로 기존 자료를 유지한다.
+
+```cmd
+docker compose -f compose-monitor.yaml up -d --build
+docker compose -f compose-general.yaml up -d --build
+```
+
+일반 http://localhost:8081 / 감시 http://localhost:8082. 기존 계정이 있으면 사용한다. 새 DB라면 다음을 하나씩 실행해 일반 student, 감시 operator를 생성하고 본인이 정한 새 비밀번호를 직접 입력한다. 기존 계정 비밀번호는 덮어쓰지 않는다.
+
+```cmd
+docker compose -f compose-general.yaml exec general-api python create_user.py
+docker compose -f compose-monitor.yaml exec monitor-api python create_user.py
+```
+
+두 화면에 로그인하고 일반에서 실습용 게시글을 작성·조회·수정·삭제한다. 감시에서는 각 동작 뒤 기록 불러오기를 누른다. 종류는 post_list/post_view/post_create_request/post_update_request/post_delete_request로 구분된다. 작성·수정·삭제는 요청의 목적이며 완료는 일반 화면 결과와 상태를 함께 확인한다. 303 응답만으로 작업 완료를 확정하지 않는다.
+
+모든 게시글과 기록을 초기화하거나 기존 볼륨을 삭제하는 명령은 사용하지 않는다. 로그/조회는 최신50건이며 삭제한 글의 기존 수집 기록은 감시DB에 유지된다. 일반 앱의 전송은 연결 실패 때 누락될 수 있다. 제공 연결/쿠키/이벤트 토큰/오류 SDK는 준비 코드로 활용하며 1교시에서 새로 구현하지 않는다.
+
+클라우드 실행 안내와 자신의 환경값은 DAY2-SETUP.md를 따른다. 기존 Sentry 오류 수집은 유지하며 행동 기록은 general→monitor로 직접 전달한다. Day3 2~6교시 자료와 탐지·승인·대응 기능은 아직 작성 전이다.
+
+[1교시 교안](day3-materials/lessons/lesson1.md) · [로컬 HTML 미리보기](day3-materials/lessons/lesson1.html)
