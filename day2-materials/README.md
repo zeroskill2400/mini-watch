@@ -2,9 +2,9 @@
 
 1교시에서 만든 Flask 예제를 이어 사용한다. 단계별 폴더는 비교·복구용이며 자신의 저장소를 덮어쓰기 위한 일괄 설치 명령이 아니다.
 
-2교시 샘플은 RLS 정책 없이 Python·Flask가 PostgreSQL에 접속한다. SQL 실행 전에 [Data API 설정](https://supabase.com/dashboard/project/_/integrations/data_api/overview)에서 수업용 프로젝트의 Enable Data API를 끈다. 프로젝트 생성 화면의 Enable automatic RLS는 체크하지 않으며, 해당 항목이 없으면 넘어간다. 각 단계의 messages.sql은 기존 메시지를 유지하면서 messages 테이블의 RLS를 끄도록 맞춰져 있다.
+2교시 샘플은 RLS 정책 없이 Python·Flask가 PostgreSQL에 접속한다. SQL 실행 전에 [Data API 설정](https://supabase.com/dashboard/project/_/integrations/data_api/overview)에서 수업용 프로젝트의 Enable Data API를 끄고 Save를 누른다. 다시 열어서 꺼져 있는지 확인한다. 프로젝트 생성 화면의 Enable automatic RLS는 체크하지 않으며, 해당 항목이 없으면 넘어간다. 각 단계의 messages.sql은 기존 메시지를 유지하면서 messages 테이블의 RLS를 끄도록 맞춰져 있다.
 
-접속 정보는 프로젝트 상단 Connect → Direct에서 Source=Primary database, Connection Method=Session pooler, Type=URI로 선택한 뒤 Connection parameters의 host·user를 복사한다. 포트는 5432이며 DB 비밀번호는 프로젝트 생성 때 정한 값을 사용한다.
+접속 정보는 프로젝트 상단 Connect → Direct에서 Connection Method의 Session pooler를 클릭하고 Type=URI를 유지한 뒤, 1 Connection string 아래 Connection parameters의 host·user를 복사한다. 처음 보이는 Framework/Next.js 안내는 Direct로 바꾸며, 아래의 Install Agent Skills (optional)는 건너뛴다. 포트는 5432이며 DB 비밀번호는 프로젝트 생성 때 정한 값을 사용한다.
 
 | 폴더 | 확인하는 단계 |
 |---|---|
