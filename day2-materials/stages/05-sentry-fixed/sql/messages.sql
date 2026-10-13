@@ -4,4 +4,4 @@ CREATE TABLE IF NOT EXISTS public.messages (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages DISABLE ROW LEVEL SECURITY;
