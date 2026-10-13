@@ -6,6 +6,10 @@
 
 접속 정보는 프로젝트 상단 Connect → Direct에서 Connection Method의 Session pooler를 클릭하고 Type=URI를 유지한 뒤, 1 Connection string 아래 Connection parameters의 host·user를 복사한다. 처음 보이는 Framework/Next.js 안내는 Direct로 바꾸며, 아래의 Install Agent Skills (optional)는 건너뛴다. 포트는 5432이며 DB 비밀번호는 프로젝트 생성 때 정한 값을 사용한다.
 
+Render 생성 화면은 New → Web Service → Git Provider의 저장소 행 선택 순서다. 서버 사양은 Free · $0 / month 카드를 직접 선택한다. Root Directory를 앱 폴더로 정하고 Dockerfile Path=./Dockerfile, Advanced의 Docker Build Context Directory=., Docker Command=빈칸, Auto-Deploy=On Commit으로 맞춘다.
+
+기존 서비스의 설정은 Environment → Environment Variables의 Edit에서 바꾸고 새 키는 Add variable로 추가한다. 저장 버튼 오른쪽 화살표에서 방식을 고른 뒤, 이름이 바뀐 버튼을 눌러야 저장된다. 설정만 적용할 때는 Save and deploy, 곧 코드 push를 할 때는 Save only로 저장하고 새 커밋의 배포를 확인한다. Deploys에서 커밋과 서비스 상단의 Live 표시를 보고 Logs의 Application logs에서 실행 기록을 확인한다.
+
 | 폴더 | 확인하는 단계 |
 |---|---|
 | stages/02-db-client | SQL과 독립 Python으로 같은 메시지 저장·조회 |
@@ -18,6 +22,6 @@
 
 프로젝트 기준은 `day06-start`의 `7ac02c0b968caf0a35d09e235389d77e7c8eafc7`이다. Git에는 실제 .env·DB 비밀번호·Sentry DSN·로그인 계정을 넣지 않는다. .env.example을 복사하고 본인의 설정을 입력한다. Render 환경 변수에는 .env의 바깥 따옴표를 제외한 값만 넣는다.
 
-코드의 로컬 검증 환경은 Python 3.12, PostgreSQL 16.15(TLS), Node 24.21.0, Next.js 16.4.0이다. Next 프로덕션 빌드, 실제 HTTP/DB 연결, 입력 검증, 기존 로그인·쿠키·기록·CRUD, 오류 SDK의 로컬 수신을 검사했다. Docker는 Compose 설정 검사까지 진행했다. Windows CMD, Docker 이미지 실행, 실제 Render/Supabase/Sentry 계정의 배포·대시보드는 이번 검증에 포함하지 않는다.
+코드의 로컬 검증 환경은 Python 3.12, PostgreSQL 16.15(TLS), Node 24.21.0, Next.js 16.4.0이다. Next 프로덕션 빌드, 실제 HTTP/DB 연결, 입력 검증, 기존 로그인·쿠키·기록·CRUD, 오류 SDK의 로컬 수신을 검사했다. Docker는 Compose 설정 검사까지 진행했다. 2026-10-13 로그인된 Render의 생성·환경 변수·배포 목록·로그 화면과 Supabase의 생성·연결·Data API 설정 화면도 대조했다. Windows CMD, Docker 이미지 실행, 새 외부 서비스 배포와 실제 Sentry 수신은 이 UI 검수에서 수행하지 않았다. Sentry 메뉴는 공식 문서 기준이다.
 
 실습은 Render Free·Supabase Free·Sentry Developer의 기본 기능으로 진행한다. 외부 서비스의 무료 조건과 화면은 변경될 수 있으므로 교안의 공식 링크와 현재 설정 화면을 확인한다.
