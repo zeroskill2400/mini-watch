@@ -1,18 +1,76 @@
-# mini-watch — 5과목 Day3(m5d3)
+# mini-watch — 5과목 Day3 수업 완성본
 
-일반 서비스의 게시글 행동을 요청 기록에서 확인하고, 출처·시각·조건을 구분해 근거가 보이는 감시 화면을 만든다.
+일반 게시판에서 직접 로그인·조회·없는 주소 요청을 해 보고, Flask JSON과 Nginx 텍스트에 남은 기록을 공통 형식으로 바꿉니다. **SIEM의 로그 정규화·통합 조회 일부**를 만드는 수업입니다. 자동 차단이나 XDR 전체를 구현하지 않습니다.
 
-처음 도구·Git·Compose·DB 준비는 [4과목 공통 실습 환경 준비](https://app.notion.com/p/3f9ae3d1800c81b0ba61cf483bd35724)에 있다. 새 DB의 초기 SQL은 Compose가 자동 실행하고 기존 DB에는 다시 적용하지 않는다. 실제 계정·DB 데이터·환경 비밀값은 Git clone으로 복사되지 않는다.
+## 시작
 
-- 시작 브랜치: `m5d3-start`, Windows 작업 폴더: `C:\work\mini-watch-m5d3`
-- 완성 비교 브랜치: `m5d3-solution`
-- 교안: [Day3 여섯 교시](https://app.notion.com/p/3b9ae3d1800c8197a6dacfb41524e347), 저장소 안 `day3-materials/lessons`
-- 일반 화면: http://localhost:8081 / 감시 화면: http://localhost:8082
+Docker Desktop을 실행한 뒤 이 프로젝트 폴더의 터미널에서 실행합니다.
 
-`monitor/backend/learning`은 감시 API에 읽기 전용으로 연결되어 VS Code에서 저장한 파일을 다음 Python 실행부터 읽는다. Scapy2.8.0은 이미지에 들어 있다. 준비된 PCAP만 읽으므로 별도 캡처 드라이버 설치는 필요하지 않다.
+```text
+docker compose up -d --build
+```
 
-1교시에서 일반 목록 조회→감시DB `http_events`→감시 화면의 같은 기록을 확인한다. general의 실행 로그에는 전송 전 JSON이 있으며 `day3-materials/lessons/lesson1.md`에 실행 로그 dump와 DB JSONL 사본을 내보내는 방법이 있다.
+한 명령이 일반 게시판과 감시 화면, 각 DB, 게이트웨이, 수업 계정을 준비합니다. 시작 명령은 실습 요청을 대신 보내거나 분석용 로그 묶음을 만들지 않습니다. 처음에는 원본이 비어 있어도 정상입니다.
 
-실제 HTTP는 새 관찰 시작 이후 ID 중 첫 결과 조회시각의 최근60초를 센다. 같은 관찰의 기준을 바꿀 때 이 구간을 유지하고 새 관찰에서 다시 정한다. 교육용 PCAP와 감사 JSON은 실제 HTTP와 별개 자료이며 한 사건의 사용자·시간으로 합치지 않는다. 검토 후보는 추가 확인의 입력이다.
+| 화면 | 주소 | 아이디 | 공개 실습 비밀번호 |
+|---|---|---|---|
+| 일반 게시판 | http://localhost:8081/login | `class-student` | `classroom1234!` |
+| 감시 화면 | http://localhost:8082 | `class-operator` | `classroom1234!` |
 
-이 브랜치는 조회 규칙과 보고서 연결이 완성된 비교본이다. 실제 HTTP 관찰은 실행한 환경에서 새로 시작한다.
+각 화면에서 아이디·비밀번호를 입력하고 `로그인`을 누릅니다. 일반 목록의 `class-student 님이 로그인했습니다.`, 감시 화면의 `class-operator 사용자`로 성공을 확인합니다. 첫 빌드 직후 화면이 아직 열리지 않으면 잠시 기다린 뒤 다시 엽니다.
+
+## 직접 동작하고 기록 확인하기
+
+1. 일반 게시판에서 로그인한 뒤 목록을 엽니다.
+2. 브라우저 주소창에 `http://localhost:8081/training-missing`을 입력해 없는 경로의 404 응답을 확인합니다.
+3. 감시 화면에서 원본을 다시 불러와 해당 경로와 상태가 두 출처에 남았는지 확인합니다.
+4. 3~5교시에서 네 함수를 완성한 뒤 분석 결과를 다시 불러옵니다. 일반 게시판에서 동작을 추가하고 다시 불러오면 현재 로그로 결과가 바뀝니다.
+
+자동 새로고침은 하지 않습니다. 로그인 뒤 이동·화면 파일·브라우저의 추가 요청도 기록되므로 클릭 수와 로그 행 수는 같지 않습니다. 앱과 Nginx가 각 요청을 기록하므로 관측 행 수를 요청 수나 공격 수로 읽지 않습니다.
+
+## 수업에서 작성할 파일
+
+`monitor/backend/learning`에서 아래 네 파일을 교시 순서대로 작성합니다.
+
+| 교시 | 파일 | 결과 |
+|---|---|---|
+| 3 | `normalize_app.py` | 현재 Flask JSON 원본을 공통 항목으로 변환 |
+| 4 | `normalize_nginx.py` | 현재 Nginx 텍스트 원본을 같은 항목으로 변환 |
+| 5 | `merge.py` | 두 출처의 관측을 한 목록으로 연결 |
+| 5 | `report.py` | 전체 관측과 상태 400 이상인 오류 관측 집계 |
+| 6 | 제공된 감시 화면 | 추가 동작 전후 비교·출처/오류 필터·원본 확인 |
+
+이 폴더의 네 함수는 완성되어 있습니다. 수업에서는 시작본의 빈 틀에 각 교시의 코드를 직접 저장해 완성합니다.
+
+공통 항목은 `id/source/method/path/status_code/raw`입니다. 앱 원본에 없는 시각을 만들지 않으며, Nginx의 원본 시각은 `raw`에 남깁니다. `app-1`·`nginx-1`은 각 출처 파일의 행 번호이지 공통 요청 ID가 아닙니다.
+
+## 준비된 코드의 역할
+
+- `general/request_logging.py`: 일반 게시판 응답의 방법·경로·상태를 JSONL에 추가하고 기존 감시 DB에도 전송합니다.
+- `gateways/general.conf`: 일반 게시판 앞 Nginx가 자신의 접근 로그를 남깁니다.
+- `learning/log_data.py`: 공유된 두 로그 파일의 현재 내용을 읽습니다. 새 요청을 보내거나 원본을 수정하지 않습니다.
+- `GET /api/analysis/raw`: 로그인한 운영자에게 현재 원본을 반환합니다. 정규화 함수가 미완성이어도 읽을 수 있습니다.
+- `GET /api/analysis`: 학생이 작성한 함수로 현재 원본을 정규화·합치기·집계합니다.
+
+원본 파일은 프로젝트의 `classroom-logs/app.jsonl`과 `classroom-logs/nginx.log`입니다. 일반 앱·Nginx만 쓰고 감시 API는 읽기 전용으로 공유합니다. 파일이 아직 없으면 빈 목록으로 표시하고, 기록 중인 마지막 미완성 줄은 다음 조회에서 읽습니다. 두 파일을 읽는 사이 새 요청이 들어오면 출처별 행 수가 잠시 다를 수 있습니다.
+
+기존 `/api/events`는 Flask가 전송한 DB 요청 기록이며 두 출처의 통합 분석과 입력 경로가 다릅니다. 통합 분석은 DB나 고정 `case.json`이 아닌 현재 두 원본 파일을 사용합니다.
+
+## 실행 상태와 보존
+
+서비스 상태와 오류는 같은 프로젝트 폴더에서 확인합니다.
+
+```text
+docker compose ps
+docker compose logs --tail 30 general-api general-gateway monitor-api
+```
+
+수업을 마치면 실행만 멈춥니다.
+
+```text
+docker compose stop
+```
+
+이 설정과 공개 비밀번호는 개인 PC 수업용입니다. 공개 포트는 `127.0.0.1:8081`·`127.0.0.1:8082`입니다. 이전 실습이 같은 포트를 사용 중이면 Docker Desktop에서 그 프로젝트만 Stop합니다. Day3는 `m5d3-classroom` 프로젝트와 전용 DB 볼륨을 사용하며, 기존 Day의 DB나 이전 Day3 볼륨을 지우지 않습니다. 재실행은 계정·게시글·DB·로그 파일을 보존합니다. 같은 이름의 계정이 있으면 기존 비밀번호를 유지합니다. `down -v`나 초기 SQL 재실행은 하지 않습니다.
+
+`start-class.cmd`·`start-class.sh`는 같은 Compose 명령을 실행하는 선택 편의 파일일 뿐 필수 절차가 아닙니다. 두 분리 Compose 파일은 호환용으로 남아 있으며, 수업에서는 기본 `compose.yaml`만 사용합니다.

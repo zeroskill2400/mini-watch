@@ -19,3 +19,33 @@ article, form, .panel { padding: 20px; margin: 18px 0; background: white; border
 .note-body { white-space: pre-wrap; overflow-wrap: anywhere; }
 .error { color: #b91c1c; }
 .message { color: #166534; }
+h3 { font-size: 17px; margin-top: 0; }
+select { font: inherit; padding: 8px 10px; border: 1px solid #aebdcc; border-radius: 6px; background: white; }
+code { overflow-wrap: anywhere; }
+.panel h2 { margin-top: 0; }
+.raw-log-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.raw-log-grid section { min-width: 0; }
+.raw-log-list { list-style: none; margin: 0; padding: 0; max-height: 32rem; overflow: auto; }
+.raw-log-list li { padding: 12px; margin-bottom: 10px; border: 1px solid #dce3ec; border-radius: 6px; background: #f8fafc; }
+.log-label { font-weight: 600; }
+.raw-log-list pre, .log-table pre { margin: 8px 0 0; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.log-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
+.log-filters select { min-width: 150px; }
+.checkbox-label { display: flex; align-items: center; gap: 8px; }
+.checkbox-label input { width: auto; margin: 0; }
+.log-table-scroll { overflow-x: auto; }
+.log-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.log-table th, .log-table td { padding: 10px; border-bottom: 1px solid #dce3ec; vertical-align: top; }
+.log-table th { white-space: nowrap; background: #f8fafc; }
+.log-table td { overflow-wrap: anywhere; }
+.log-table td:not(:last-child) { white-space: nowrap; }
+.log-table details { min-width: 90px; }
+.log-table pre { min-width: 230px; max-width: 430px; }
+.log-table summary { cursor: pointer; white-space: nowrap; }
+.observation-counts { font-weight: 600; }
+@media (max-width: 640px) {
+  main { margin-top: 20px; padding: 0 14px 28px; }
+  .panel, .login-form { padding: 16px; }
+  .raw-log-grid { grid-template-columns: minmax(0, 1fr); }
+  .log-table { min-width: 560px; }
+}

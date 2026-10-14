@@ -8,6 +8,7 @@ export async function requestJson(path, method = "GET", data = null) {
     method,
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
+    cache: "no-store",
   };
   if (method !== "GET") options.headers["X-CSRF-Token"] = csrfToken;
   if (data !== null) options.body = JSON.stringify(data);
