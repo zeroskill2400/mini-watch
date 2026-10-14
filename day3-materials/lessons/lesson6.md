@@ -47,7 +47,7 @@ docker compose exec -T monitor-api python -m learning.report
 3. 통합 로그 불러오기를 누르고 출처 전체·오류만 보기 상태에서 /final-check의 app·nginx 행과 원본을 확인한다.
 원본을 갱신하면 이전 통합 표는 비워진다. 통합 로그 불러오기를 눌러 새 원본을 다시 분석한 결과를 보자. 한쪽 기록이 늦게 보이면 잠시 뒤 다시 조회한다.
 ### 화면까지 연결하는 코드를 읽자
-monitor/backend/routes/analysis.py에서 다음 부분을 찾자. API는 화면이 서버에 데이터를 요청하는 통로이며, 아래는 이미 제공된 함수의 읽기용 발췌다.
+`monitor/backend/routes/analysis.py`에서 다음 부분을 찾자. API는 화면이 서버에 데이터를 요청하는 통로이며, 아래는 이미 제공된 함수의 읽기용 발췌다.
 `routes/analysis.py` — 로그인 확인 후 학생 집계 함수 호출
 ```python
 @analysis_bp.get("/api/analysis")

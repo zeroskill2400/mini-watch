@@ -113,7 +113,7 @@ docker compose exec -T monitor-api python -m learning.report
 ### 정상 기록이 오류 목록에서 빠지는 이유를 확인하자
 같은 조건으로 판단하기
 1. [게시판 목록](http://localhost:8081)을 연 뒤 learning.merge 명령을 다시 실행한다.
-2. GET /의 상태 200을 찾아 `report.py`의 status\_code >= 400 조건과 비교한다.
+2. GET /의 상태 200을 찾아 `report.py`의 `status_code >= 400` 조건과 비교한다.
 200인 행은 전체 목록에는 남지만 오류 목록에는 들어가지 않는다. 기록을 삭제한 것이 아니라 조건을 만족한 행만 별도로 센 것이다.
 ## 확인문제
 **확인문제 1.** `merge.py`는 어떤 두 결과를 합치는가?
@@ -139,7 +139,7 @@ docker compose exec -T monitor-api python -m learning.report
 **확인문제 5.** 이번 오류 집계의 조건은 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	status\_code >= 400이다. 정규화한 숫자 상태에 같은 조건을 쓴다.
+	`status_code >= 400`이다. 정규화한 숫자 상태에 같은 조건을 쓴다.
 </details>
 **확인문제 6.** 오류를 찾을 때 source를 먼저 구분해야 하는가?
 <details>

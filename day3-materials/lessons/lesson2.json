@@ -175,7 +175,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "monitor/backend/learning/log_data.py의 아래 함수를 읽어보자. read_complete_lines는 준비된 파일 읽기 함수이고 json.loads는 JSON 문자열을 Python 값으로 바꾸는 함수다."
+          "text": "`monitor/backend/learning/log_data.py`의 아래 함수를 읽어보자. read_complete_lines는 준비된 파일 읽기 함수이고 json.loads는 JSON 문자열을 Python 값으로 바꾸는 함수다."
         },
         {
           "kind": "code",
@@ -211,7 +211,7 @@
   "confirmation_questions": [
     {
       "question": "Nginx를 보려면 별도 사이트에서 활동해야 하는가?",
-      "answer": "아니다. localhost:8081로 들어오는 게시판 요청을 Nginx가 먼저 받고 앱에 전달한다."
+      "answer": "아니다. `localhost:8081`로 들어오는 게시판 요청을 Nginx가 먼저 받고 앱에 전달한다."
     },
     {
       "question": "게시글 저장 요청의 방법과 경로는 무엇인가?",

@@ -223,7 +223,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "VS Code의 파일 → 폴더 열기에서 실제 clone한 폴더를 연 뒤 general/app.py를 선택하자. Flask는 게시판 요청을 처리하는 Python 웹 도구이고, 아래는 준비된 코드의 읽기용 발췌다."
+          "text": "VS Code의 파일 → 폴더 열기에서 실제 clone한 폴더를 연 뒤 `general/app.py`를 선택하자. Flask는 게시판 요청을 처리하는 Python 웹 도구이고, 아래는 준비된 코드의 읽기용 발췌다."
         },
         {
           "kind": "code",
@@ -279,11 +279,11 @@
     },
     {
       "question": "일반 게시판은 어디에 접속하고 어떤 계정으로 로그인하는가?",
-      "answer": "http://localhost:8081/login에서 class-student와 classroom1234!를 사용한다. 수업용 계정은 준비되어 있다."
+      "answer": "`http://localhost:8081/login`에서 class-student와 classroom1234!를 사용한다. 수업용 계정은 준비되어 있다."
     },
     {
       "question": "감시 화면 계정이 게시판 계정과 같은가?",
-      "answer": "아니다. http://localhost:8082에서 class-operator를 사용하며 수업 비밀번호는 classroom1234!이다."
+      "answer": "아니다. `http://localhost:8082`에서 class-operator를 사용하며 수업 비밀번호는 classroom1234!이다."
     },
     {
       "question": "정상 로그인은 어떤 경로와 상태로 찾는가?",

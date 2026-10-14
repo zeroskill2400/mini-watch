@@ -71,7 +71,7 @@ classroom-logs/
 learning/log_data.py → 원본 로그 화면
 ```
 이 수업의 수집은 여러 서버에 에이전트를 설치하는 대신 공유 폴더의 두 파일을 감시 앱 한곳에서 읽는 방식이다. 원본을 보여 주는 기능은 이미 준비되어 있다.
-monitor/backend/learning/log\_data.py의 아래 함수를 읽어보자. read\_complete\_lines는 준비된 파일 읽기 함수이고 json.loads는 JSON 문자열을 Python 값으로 바꾸는 함수다.
+`monitor/backend/learning/log_data.py`의 아래 함수를 읽어보자. read\_complete\_lines는 준비된 파일 읽기 함수이고 json.loads는 JSON 문자열을 Python 값으로 바꾸는 함수다.
 `log_data.py` — 원본을 읽는 부분, 읽기용 발췌
 ```python
 def read_logs():
@@ -90,7 +90,7 @@ app 쪽은 JSON을 객체로 읽고 nginx 쪽은 글자 줄을 그대로 둔다.
 **확인문제 1.** Nginx를 보려면 별도 사이트에서 활동해야 하는가?
 <details>
 <summary>정답과 해설</summary>
-	아니다. localhost:8081로 들어오는 게시판 요청을 Nginx가 먼저 받고 앱에 전달한다.
+	아니다. `localhost:8081`로 들어오는 게시판 요청을 Nginx가 먼저 받고 앱에 전달한다.
 </details>
 **확인문제 2.** 게시글 저장 요청의 방법과 경로는 무엇인가?
 <details>

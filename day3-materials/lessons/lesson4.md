@@ -65,7 +65,7 @@ print(status >= 400)
 	```plain text
 TypeError: '>=' not supported between instances of 'str' and 'int'
 	```
-	문자열과 정수는 이 방식으로 비교할 수 없다. int(status) >= 400처럼 숫자로 바꾼 뒤 비교한다.
+	문자열과 정수는 이 방식으로 비교할 수 없다. `int(status) >= 400`처럼 숫자로 바꾼 뒤 비교한다.
 </details>
 ## 2단계. 실제 Nginx 변환 함수 완성하기
 ### 원본을 공통 항목에 넣자

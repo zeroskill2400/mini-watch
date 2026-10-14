@@ -94,7 +94,7 @@ docker compose logs --tail 20 general-api monitor-api
 GET은 페이지를 읽는 요청이고 404는 해당 경로가 없다는 응답이다. 지금은 우리가 없는 주소를 열었기 때문에 생긴 기록이지, 공격을 탐지했다는 뜻이 아니다.
 브라우저는 페이지 외에 스타일 파일 등을 함께 요청할 수 있다. 전체 줄 수를 맞추기보다 내가 입력한 경로와 상태가 나타나는지 확인하자.
 ### 이 한 줄은 어디서 만들어질까
-VS Code의 파일 → 폴더 열기에서 실제 clone한 폴더를 연 뒤 general/app.py를 선택하자. Flask는 게시판 요청을 처리하는 Python 웹 도구이고, 아래는 준비된 코드의 읽기용 발췌다.
+VS Code의 파일 → 폴더 열기에서 실제 clone한 폴더를 연 뒤 `general/app.py`를 선택하자. Flask는 게시판 요청을 처리하는 Python 웹 도구이고, 아래는 준비된 코드의 읽기용 발췌다.
 `general/app.py` — 응답 뒤 기록 함수 연결
 ```python
 from request_logging import record_request
@@ -133,12 +133,12 @@ with open(log_path, 'a', encoding='utf-8') as log_file:
 **확인문제 3.** 일반 게시판은 어디에 접속하고 어떤 계정으로 로그인하는가?
 <details>
 <summary>정답과 해설</summary>
-	http://localhost:8081/login에서 class-student와 classroom1234!를 사용한다. 수업용 계정은 준비되어 있다.
+	`http://localhost:8081/login`에서 class-student와 classroom1234!를 사용한다. 수업용 계정은 준비되어 있다.
 </details>
 **확인문제 4.** 감시 화면 계정이 게시판 계정과 같은가?
 <details>
 <summary>정답과 해설</summary>
-	아니다. http://localhost:8082에서 class-operator를 사용하며 수업 비밀번호는 classroom1234!이다.
+	아니다. `http://localhost:8082`에서 class-operator를 사용하며 수업 비밀번호는 classroom1234!이다.
 </details>
 **확인문제 5.** 정상 로그인은 어떤 경로와 상태로 찾는가?
 <details>
