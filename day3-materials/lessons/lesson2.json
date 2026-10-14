@@ -52,7 +52,7 @@
           "steps": [
             "[게시판 목록](http://localhost:8081)을 연다. 로그아웃 상태라면 /login에서 class-student와 classroom1234!로 로그인한다.",
             "새 게시글 작성을 누른다. 제목에 로그 수집 연습, 내용에 내가 작성한 글을 입력하고 게시글 저장을 누른다.",
-            "[감시 화면](http://localhost:8082)에서 원본 로그 불러오기를 누른다. 로그인이 필요하면 class-operator와 classroom1234!를 사용한다."
+            "[감시 화면](http://localhost:8082)에서 원본 로그 불러오기를 누른다. 완성 시연 화면에서는 로그 새로고침을 누른다. 로그인이 필요하면 class-operator와 classroom1234!를 사용한다."
           ]
         },
         {
@@ -156,11 +156,105 @@
       "body": [
         {
           "kind": "heading",
+          "text": "Docker로 Flask 원본 파일 열기"
+        },
+        {
+          "kind": "paragraph",
+          "text": "감시 화면에 나온 기록이 실제 어디에 저장되는지 직접 열어보자. 실행 중인 컨테이너 안의 Linux 명령을 쓰므로 Windows나 Mac에 Linux를 따로 설치하지 않는다."
+        },
+        {
+          "kind": "tool_steps",
+          "tool": "프로젝트 터미널 열기",
+          "steps": [
+            "VS Code의 파일 → 폴더 열기에서 사이트를 실행한 mini-watch-m5d3 폴더를 연다. Windows 기본 실습 경로는 `C:\\work\\mini-watch-m5d3`이며, 다른 곳에 clone했다면 그 실제 폴더를 연다.",
+            "터미널 → 새 터미널을 누른다. 현재 위치가 방금 연 프로젝트 폴더인지 확인하고 아래 명령을 실행한다. 게시판과 감시 서비스는 켜 둔다."
+          ]
+        },
+        {
+          "kind": "command",
+          "shell": "terminal",
+          "src": "docker compose -f compose-general.yaml exec general-api sh",
+          "verified": "example",
+          "label": "프로젝트 폴더 터미널 — Flask 컨테이너 안으로 들어가기"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-f compose-general.yaml`은 사용할 설정 파일을 고른다. `exec general-api sh`는 실행 중인 Flask 컨테이너에서 명령을 입력할 셸을 열며, 새 컨테이너를 만드는 명령이 아니다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "이제 컨테이너 안이다. `ls -lh`로 파일의 이름과 크기를 확인하고, `tail -n 5`로 마지막 다섯 줄을 읽어보자."
+        },
+        {
+          "kind": "command",
+          "shell": "terminal",
+          "src": "ls -lh /classroom-logs/app.jsonl\ntail -n 5 /classroom-logs/app.jsonl",
+          "verified": "example",
+          "label": "Flask 컨테이너 안 — 두 줄을 순서대로 실행"
+        },
+        {
+          "kind": "paragraph",
+          "text": "파일 정보 다음에 `method`·`path`·`status_code`가 있는 JSON 줄이 보인다. 최근 기록이 다섯 줄보다 적으면 있는 만큼만 나오며, 요청에 따라 내용은 달라진다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "이 파일은 `general/request_logging.py`의 `record_request`가 요청 처리 뒤에 추가한다. 준비된 `REQUEST_LOG_PATH` 값이 `/classroom-logs/app.jsonl`이므로 이 경로에 저장된다."
+        },
+        {
+          "kind": "command",
+          "shell": "terminal",
+          "src": "exit",
+          "verified": "example",
+          "label": "Flask 셸에서 나오기"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`exit`는 지금 연 셸만 끝낸다. Flask 서버는 계속 켜져 있고, 터미널은 내 PC의 프로젝트 폴더로 돌아온다."
+        },
+        {
+          "kind": "heading",
+          "text": "Docker로 Nginx 원본 파일 열기"
+        },
+        {
+          "kind": "paragraph",
+          "text": "이번에는 같은 요청을 앞에서 받은 Nginx의 파일을 열어보자. 방금 돌아온 내 PC 터미널에서 실행한다."
+        },
+        {
+          "kind": "command",
+          "shell": "terminal",
+          "src": "docker compose -f compose-general.yaml exec general-gateway sh",
+          "verified": "example",
+          "label": "프로젝트 폴더 터미널 — Nginx 컨테이너 안으로 들어가기"
+        },
+        {
+          "kind": "command",
+          "shell": "terminal",
+          "src": "ls -lh /classroom-logs/nginx.log\ntail -n 5 /classroom-logs/nginx.log",
+          "verified": "example",
+          "label": "Nginx 컨테이너 안 — 두 줄을 순서대로 실행"
+        },
+        {
+          "kind": "paragraph",
+          "text": "이번에는 JSON의 항목 이름 대신 주소·시각·요청·상태가 이어진 문자열이 나온다. 앞에서 본 `gateways/general.conf`의 `access_log /classroom-logs/nginx.log combined;`가 이 파일을 기록한다."
+        },
+        {
+          "kind": "command",
+          "shell": "terminal",
+          "src": "exit",
+          "verified": "example",
+          "label": "Nginx 셸에서 나와 내 PC 터미널로 돌아가기"
+        },
+        {
+          "kind": "paragraph",
+          "text": "`docker compose -f compose-general.yaml logs`는 일반 서비스 컨테이너의 표준 출력 기록을 보는 명령이다. 지금 한 것은 그 화면이 아니라 `/classroom-logs` 안의 원본 파일을 직접 읽는 일이다."
+        },
+        {
+          "kind": "heading",
           "text": "공유 폴더와 읽기 함수를 보자"
         },
         {
           "kind": "paragraph",
-          "text": "VS Code에서 classroom-logs 폴더를 열면 app.jsonl과 nginx.log가 있다. 준비된 Compose 설정이 이 폴더를 앱·Nginx·감시 앱에 연결해 두었다."
+          "text": "방금 컨테이너에서 읽은 두 파일은 내 프로젝트의 `classroom-logs` 폴더에서도 보인다. 준비된 Compose 설정이 이 폴더를 각 컨테이너의 `/classroom-logs`에 연결하므로, 따로 복사한 파일이 아니라 같은 원본을 보는 것이다."
         },
         {
           "kind": "code",
@@ -198,8 +292,23 @@
           "tool": "누적 수집 확인하기",
           "steps": [
             "일반 게시판 탭에서 [http://localhost:8081/collect-check](http://localhost:8081/collect-check)을 연다.",
-            "감시 화면의 원본 로그 불러오기를 다시 누르고 앱·Nginx 양쪽에서 /collect-check와 404를 찾는다."
+            "내 PC의 프로젝트 터미널로 돌아와 아래 두 명령을 실행한다."
           ]
+        },
+        {
+          "kind": "command",
+          "shell": "terminal",
+          "src": "docker compose -f compose-general.yaml exec general-api tail -n 5 /classroom-logs/app.jsonl\ndocker compose -f compose-general.yaml exec general-gateway tail -n 5 /classroom-logs/nginx.log",
+          "verified": "example",
+          "label": "프로젝트 폴더 터미널 — 두 파일을 다시 읽기"
+        },
+        {
+          "kind": "paragraph",
+          "text": "이번에는 `sh` 대신 `tail`을 바로 실행하므로 파일을 읽은 뒤 자동으로 내 PC 터미널로 돌아온다. 두 출력에서 `/collect-check`와 `404`를 찾자. 다른 요청이 뒤에 많이 쌓였다면 `-n 5`를 `-n 20`으로 바꿔 더 읽는다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "감시 화면에서 원본 로그 불러오기를 다시 누른다. 완성 시연 화면에서는 로그 새로고침을 누르고 경로 검색에 `/collect-check`를 입력한다. 양쪽 원본의 경로와 상태가 방금 파일에서 읽은 값과 같은지 확인하자."
         },
         {
           "kind": "paragraph",
@@ -268,6 +377,8 @@
     {
       "title": "3단계. 두 파일이 감시 화면으로 모이는 길 확인하기",
       "items": [
+        "Docker로 Flask 원본 파일 열기",
+        "Docker로 Nginx 원본 파일 열기",
         "공유 폴더와 읽기 함수를 보자",
         "추가 요청도 두 원본에 나타나는지 보자"
       ]

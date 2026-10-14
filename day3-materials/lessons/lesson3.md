@@ -97,7 +97,7 @@ VS Code의 터미널 → 새 터미널에서 + 옆 화살표 → Command Prompt�
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_app
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app
 ```
 ```plain text
 app GET /training-missing 404
@@ -116,7 +116,7 @@ app GET /training-missing 404
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_app
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app
 ```
 새 경로가 나타나면 고정 예제만 변환한 것이 아니라 현재 로그를 다시 읽은 것이다. 아직 Nginx 변환과 통합 집계는 만들지 않았으므로 감시 화면의 통합 표는 완성 안내 상태로 남는다.
 <details>
@@ -166,7 +166,7 @@ KeyError: 'status'
 **확인문제 7.** 파일을 저장한 뒤 확인 명령은 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	프로젝트 CMD에서 docker compose exec -T monitor-api python -m learning.normalize\_app을 실행한다.
+	프로젝트 CMD에서 `docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app`을 실행한다.
 </details>
 **확인문제 8.** /app-check를 연 뒤 이전 실행 결과가 저절로 바뀌는가?
 <details>

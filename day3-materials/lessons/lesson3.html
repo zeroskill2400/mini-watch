@@ -121,7 +121,7 @@ if __name__ == &quot;__main__&quot;:
         print(event[&quot;source&quot;], event[&quot;method&quot;], event[&quot;path&quot;], event[&quot;status_code&quot;])</code></pre>
 <p>event는 원본 한 개, number는 그 원본의 순서다. 딕셔너리의 값을 읽어 새 딕셔너리로 돌려주되 raw에는 원본을 그대로 보관한다. int는 값을 정수로 바꾸는 Python 기본 함수다. 파일 아래의 if __name__부터는 준비된 실행 확인부다. read_logs로 현재 로그를 읽고 enumerate로 1부터 순서를 붙여 함수를 호출한다. 오늘 바꾸는 핵심은 위 normalize_app의 반환값이다. VS Code의 터미널 → 새 터미널에서 + 옆 화살표 → Command Prompt를 선택하고 실행하자. 프로젝트 폴더의 Windows CMD</p>
 <pre><code class="language-bash">cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_app</code></pre>
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app</code></pre>
 <pre><code class="language-plain-text">app GET /training-missing 404</code></pre>
 <p>출력 예시 중 목표 경로에 해당하는 한 줄이다. 내 화면에는 로그인·스타일 요청 등 다른 행도 함께 나온다. 파일을 저장하면 연결된 컨테이너에서도 같은 코드를 읽으므로 이미지를 다시 빌드하지 않는다.</p>
 <h3>원본과 결과를 대조하자</h3>
@@ -140,7 +140,7 @@ docker compose exec -T monitor-api python -m learning.normalize_app</code></pre>
 </ol>
 <p>프로젝트 폴더의 Windows CMD</p>
 <pre><code class="language-bash">cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_app</code></pre>
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app</code></pre>
 <p>새 경로가 나타나면 고정 예제만 변환한 것이 아니라 현재 로그를 다시 읽은 것이다. 아직 Nginx 변환과 통합 집계는 만들지 않았으므로 감시 화면의 통합 표는 완성 안내 상태로 남는다.</p>
 <details>
 <summary>상태 항목 이름을 잘못 적으면</summary>
@@ -184,7 +184,7 @@ print(event[&quot;status&quot;])</code></pre>
 <p><strong>확인문제 7.</strong> 파일을 저장한 뒤 확인 명령은 무엇인가?</p>
 <details>
 <summary>정답과 해설</summary>
-<p>프로젝트 CMD에서 docker compose exec -T monitor-api python -m learning.normalize_app을 실행한다.</p>
+<p>프로젝트 CMD에서 <code>docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app</code>을 실행한다.</p>
 </details>
 <p><strong>확인문제 8.</strong> /app-check를 연 뒤 이전 실행 결과가 저절로 바뀌는가?</p>
 <details>

@@ -155,7 +155,7 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose exec -T monitor-api python -m learning.normalize_app",
+          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
@@ -207,7 +207,7 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose exec -T monitor-api python -m learning.normalize_app",
+          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
@@ -274,7 +274,7 @@
     },
     {
       "question": "파일을 저장한 뒤 확인 명령은 무엇인가?",
-      "answer": "프로젝트 CMD에서 docker compose exec -T monitor-api python -m learning.normalize_app을 실행한다."
+      "answer": "프로젝트 CMD에서 `docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app`을 실행한다."
     },
     {
       "question": "/app-check를 연 뒤 이전 실행 결과가 저절로 바뀌는가?",

@@ -45,7 +45,7 @@ if __name__ == "__main__":
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.merge
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.merge
 ```
 ```plain text
 app-… app GET /nginx-check 404
@@ -91,7 +91,7 @@ load\_normalized\_events가 두 출처의 공통 목록을 준다. for 안에서
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.report
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.report
 ```
 ```plain text
 전체 관측: 내 현재 전체 행 수
@@ -106,8 +106,8 @@ docker compose exec -T monitor-api python -m learning.report
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.merge
-docker compose exec -T monitor-api python -m learning.report
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.merge
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.report
 ```
 404 경로의 새 관측이 조건에 들어간다. 브라우저 추가 요청과 기록 시점 차이가 있으므로 정확히 두 행 증가만을 성공 조건으로 삼지는 않는다.
 ### 정상 기록이 오류 목록에서 빠지는 이유를 확인하자

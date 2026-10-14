@@ -34,9 +34,11 @@ if not exist C:\work mkdir C:\work
 cd /d C:\work
 git clone --branch m5d3-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-m5d3
 cd mini-watch-m5d3
-docker compose up -d --build
+docker compose -f compose-general.yaml up -d --build --wait
+docker compose -f compose-monitor.yaml up -d --build --wait
 ```
-Compose는 저장소의 실행 설정을 읽어 게시판·감시 화면·DB를 함께 켠다. 계정과 로그 연결도 준비되므로 가입, 환경 변수 작성, 별도 시작 스크립트 실행은 하지 않는다.
+첫 Docker 명령이 일반 게시판을, 다음 명령이 감시 서비스를 켠다. 한 줄씩 실행하고 첫 명령이 오류 없이 끝난 뒤 다음 명령으로 넘어간다.
+`-f`는 실행 설정 파일을 고르고, `--wait`는 서비스가 준비될 때까지 기다린다. 네트워크·저장 공간은 Compose가 만들고 일반 앱과 감시 앱의 `init.py`가 수업 계정을 준비한 뒤 서버를 켜므로, 초기화 파일을 직접 실행하거나 수정하지 않는다.
 ### 게시판에 로그인하자
 <table header-row="true" fit-page-width="true">
 <tr>
@@ -77,10 +79,12 @@ POST는 로그인 정보처럼 데이터를 보내는 요청이다. 200은 정�
 	포트 8081·8082가 사용 중이면 Docker Desktop의 Containers에서 그 포트를 쓰는 이전 실습만 Stop한다. 새 폴더라고 포트 충돌까지 없어지는 것은 아니다.
 	프로젝트 폴더의 Windows CMD
 	```bash
-docker compose ps
-docker compose logs --tail 20 general-api monitor-api
+docker compose -f compose-general.yaml ps
+docker compose -f compose-monitor.yaml ps
+docker compose -f compose-general.yaml logs --tail 20 general-api
+docker compose -f compose-monitor.yaml logs --tail 20 monitor-api
 	```
-	화면이 아직 안 열리면 실행 중인지 확인하고 잠시 뒤 다시 연다. 로그의 오류는 강사에게 보여 주며 DB 볼륨은 삭제하지 않는다. 오늘 자료의 compose.yaml이 없으면 옛 시작본이므로 새 폴더로 다시 받는다.
+	두 설정이 각각 다른 서비스를 관리하므로 상태와 로그도 파일을 지정해 확인한다. `compose-general.yaml`을 찾지 못하면 clone한 프로젝트 폴더인지 확인하고, 로그의 오류는 강사에게 보여 주며 DB 볼륨은 삭제하지 않는다.
 </details>
 ## 3단계. 내가 만든 요청을 원본에서 찾기
 ### 없는 주소로 요청 하나를 구분해 보자
@@ -128,7 +132,7 @@ with open(log_path, 'a', encoding='utf-8') as log_file:
 **확인문제 2.** 서비스를 켤 때 실행할 명령은 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	프로젝트 폴더에서 docker compose up -d --build를 실행한다. 저장된 설정으로 서비스를 함께 켠다.
+	프로젝트 폴더에서 `docker compose -f compose-general.yaml up -d --build --wait`를 실행한 뒤 `docker compose -f compose-monitor.yaml up -d --build --wait`를 실행한다. 일반 게시판을 먼저 준비하고 감시 서비스를 켠다.
 </details>
 **확인문제 3.** 일반 게시판은 어디에 접속하고 어떤 계정으로 로그인하는가?
 <details>

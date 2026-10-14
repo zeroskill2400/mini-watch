@@ -30,7 +30,7 @@ GET /nginx-check HTTP/1.1
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.split_demo
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.split_demo
 ```
 split에 큰따옴표와 2를 주면 앞에서 두 번만 나눠 세 조각이 된다. 가운데 request\_text에는 요청이, suffix에는 요청 뒤의 상태와 나머지가 들어간다.
 suffix.split()은 공백을 기준으로 나눈다. 그 결과의 첫 값인 \[0\]이 상태 글자 404다. 앱처럼 항목 이름으로 읽는 대신 위치를 이용한 것이다.
@@ -52,7 +52,7 @@ True
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.split_demo
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.split_demo
 ```
 세 조각은 방법·경로·통신 버전이다. protocol은 이번 표에 쓰지 않고, 상태는 int로 정수로 바꿔야 숫자 400과 비교할 수 있다.
 <details>
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_nginx
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_nginx
 ```
 ```plain text
 nginx GET /training-missing 404
@@ -115,8 +115,8 @@ nginx GET /training-missing 404
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_app
-docker compose exec -T monitor-api python -m learning.normalize_nginx
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_nginx
 ```
 두 파일을 따로 읽던 방식은 달랐지만 변환 결과를 읽는 방식은 같아졌다. 다음에는 이 결과를 하나의 목록에 담아 한 조건으로 오류를 찾는다.
 ## 확인문제

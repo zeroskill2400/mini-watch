@@ -26,7 +26,7 @@ XDR(Extended Detection and Response)은 메일·PC 등 여러 보안 영역의 �
 
 ## 시작과 산출물
 
-1교시에서 시작본을 clone하고 `docker compose up -d --build`로 켠다. 계정과 접속 주소도 그 자리에서 안내하므로 별도 공통 준비 페이지나 시작 스크립트가 필요하지 않다. 로그는 준비 도구가 대신 만드는 것이 아니라 학생이 게시판을 실제로 사용하면서 만든다.
+1교시에서 시작본을 clone하고 `docker compose -f compose-general.yaml up -d --build --wait` 뒤에 `docker compose -f compose-monitor.yaml up -d --build --wait`를 실행한다. 계정 준비와 서버 실행은 컨테이너 시작에 포함되며 접속 주소도 그 자리에서 안내하므로 별도 공통 준비 페이지나 시작 스크립트가 필요하지 않다. 로그는 준비 도구가 대신 만드는 것이 아니라 학생이 게시판을 실제로 사용하면서 만든다.
 
 산출물은 `normalize_app.py`·`normalize_nginx.py`·`merge.py`·`report.py`와 이 코드가 만든 결과를 보여 주는 통합 로그 화면이다.
 

@@ -84,13 +84,17 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "if not exist C:\\work mkdir C:\\work\ncd /d C:\\work\ngit clone --branch m5d3-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-m5d3\ncd mini-watch-m5d3\ndocker compose up -d --build",
+          "src": "if not exist C:\\work mkdir C:\\work\ncd /d C:\\work\ngit clone --branch m5d3-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-m5d3\ncd mini-watch-m5d3\ndocker compose -f compose-general.yaml up -d --build --wait\ndocker compose -f compose-monitor.yaml up -d --build --wait",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
         {
           "kind": "paragraph",
-          "text": "Compose는 저장소의 실행 설정을 읽어 게시판·감시 화면·DB를 함께 켠다. 계정과 로그 연결도 준비되므로 가입, 환경 변수 작성, 별도 시작 스크립트 실행은 하지 않는다."
+          "text": "첫 Docker 명령이 일반 게시판을, 다음 명령이 감시 서비스를 켠다. 한 줄씩 실행하고 첫 명령이 오류 없이 끝난 뒤 다음 명령으로 넘어간다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "`-f`는 실행 설정 파일을 고르고, `--wait`는 서비스가 준비될 때까지 기다린다. 네트워크·저장 공간은 Compose가 만들고 일반 앱과 감시 앱의 `init.py`가 수업 계정을 준비한 뒤 서버를 켜므로, 초기화 파일을 직접 실행하거나 수정하지 않는다."
         },
         {
           "kind": "heading",
@@ -173,13 +177,13 @@
             {
               "kind": "command",
               "shell": "cmd",
-              "src": "docker compose ps\ndocker compose logs --tail 20 general-api monitor-api",
+              "src": "docker compose -f compose-general.yaml ps\ndocker compose -f compose-monitor.yaml ps\ndocker compose -f compose-general.yaml logs --tail 20 general-api\ndocker compose -f compose-monitor.yaml logs --tail 20 monitor-api",
               "verified": "example",
               "label": "프로젝트 폴더의 Windows CMD"
             },
             {
               "kind": "paragraph",
-              "text": "화면이 아직 안 열리면 실행 중인지 확인하고 잠시 뒤 다시 연다. 로그의 오류는 강사에게 보여 주며 DB 볼륨은 삭제하지 않는다. 오늘 자료의 compose.yaml이 없으면 옛 시작본이므로 새 폴더로 다시 받는다."
+              "text": "두 설정이 각각 다른 서비스를 관리하므로 상태와 로그도 파일을 지정해 확인한다. `compose-general.yaml`을 찾지 못하면 clone한 프로젝트 폴더인지 확인하고, 로그의 오류는 강사에게 보여 주며 DB 볼륨은 삭제하지 않는다."
             }
           ]
         }
@@ -275,7 +279,7 @@
     },
     {
       "question": "서비스를 켤 때 실행할 명령은 무엇인가?",
-      "answer": "프로젝트 폴더에서 docker compose up -d --build를 실행한다. 저장된 설정으로 서비스를 함께 켠다."
+      "answer": "프로젝트 폴더에서 `docker compose -f compose-general.yaml up -d --build --wait`를 실행한 뒤 `docker compose -f compose-monitor.yaml up -d --build --wait`를 실행한다. 일반 게시판을 먼저 준비하고 감시 서비스를 켠다."
     },
     {
       "question": "일반 게시판은 어디에 접속하고 어떤 계정으로 로그인하는가?",

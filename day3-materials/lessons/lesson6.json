@@ -42,7 +42,7 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose restart monitor-api",
+          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose -f compose-monitor.yaml restart monitor-api",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
@@ -80,7 +80,7 @@
             {
               "kind": "command",
               "shell": "cmd",
-              "src": "docker compose exec -T monitor-api python -m learning.report",
+              "src": "docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.report",
               "verified": "example",
               "label": "프로젝트 폴더의 Windows CMD"
             },
@@ -217,13 +217,20 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "docker compose stop",
+          "src": "docker compose -f compose-monitor.yaml stop\ndocker compose -f compose-general.yaml stop",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
         {
           "kind": "paragraph",
-          "text": "실습 서비스를 멈추되 코드·로그·DB는 남긴다. 이어서 실행할 때는 같은 폴더에서 docker compose up -d를 사용한다."
+          "text": "실습 서비스를 멈추되 코드·로그·DB는 남긴다. 이어서 실행할 때는 같은 프로젝트 폴더에서 아래 두 줄을 순서대로 실행한다."
+        },
+        {
+          "kind": "command",
+          "shell": "cmd",
+          "src": "docker compose -f compose-general.yaml up -d --build --wait\ndocker compose -f compose-monitor.yaml up -d --build --wait",
+          "verified": "example",
+          "label": "프로젝트 폴더의 Windows CMD"
         }
       ]
     }
@@ -267,7 +274,7 @@
     },
     {
       "question": "실습을 멈추면서 데이터를 보존하려면 어떤 명령을 쓰는가?",
-      "answer": "docker compose stop을 쓴다. 볼륨을 삭제하지 않으며 같은 폴더에서 다시 켤 수 있다."
+      "answer": "`docker compose -f compose-monitor.yaml stop` 뒤에 `docker compose -f compose-general.yaml stop`을 실행한다. 볼륨을 삭제하지 않으며 같은 폴더에서 다시 켤 수 있다."
     }
   ],
   "closing": "사이트 직접 사용 → 두 원본 확인 → 정규화 → 통합 조회가 이어졌다. 새 행동이 같은 흐름으로 반영되는 것을 확인한 것이 오늘의 최종 산출물이다.",

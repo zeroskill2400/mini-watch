@@ -1,4 +1,4 @@
-name: m5d3-classroom
+name: m5d3-monitor
 services:
   monitor-db:
     image: postgres:16-bookworm
@@ -22,10 +22,6 @@ services:
       retries: 20
   monitor-api:
     build: ./monitor/backend
-    command:
-    - sh
-    - -c
-    - python seed_classroom.py && exec waitress-serve --host=0.0.0.0 --port=$$PORT app:app
     volumes:
     - ./monitor/backend/learning:/app/learning
     - ./classroom-logs:/classroom-logs:ro
@@ -41,6 +37,11 @@ services:
     depends_on:
       monitor-db:
         condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
     networks:
     - monitor-front-net
     - monitor-data-net
@@ -49,6 +50,11 @@ services:
     build: ./monitor/next-frontend
     networks:
     - monitor-front-net
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000').then(response => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1));"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
   monitor-gateway:
     image: nginx:1.28-alpine
     ports:
@@ -58,11 +64,20 @@ services:
     networks:
     - monitor-front-net
     depends_on:
-    - monitor-api
-    - monitor-web
+      monitor-api:
+        condition: service_healthy
+      monitor-web:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
+      interval: 3s
+      timeout: 3s
+      retries: 30
 volumes:
   monitor-data: {}
 networks:
   monitor-front-net: {}
   monitor-data-net: {}
-  events-net: {}
+  events-net:
+    external: true
+    name: m5d3-general_events-net
