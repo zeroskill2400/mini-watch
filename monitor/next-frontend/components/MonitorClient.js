@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { requestJson } from "../api/client";
 import NotesClient from "./NotesClient";
+import AnalysisClient from "./AnalysisClient";
 
 export default function MonitorClient() {
   const [user, setUser] = useState(null);
@@ -64,6 +65,7 @@ export default function MonitorClient() {
           </div>
           <h2>관찰 메모</h2>
           <NotesClient />
+          <AnalysisClient />
         </>
       )}
     </main>

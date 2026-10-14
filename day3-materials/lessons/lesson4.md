@@ -1,0 +1,213 @@
+PCAP(Packet Capture)은 패킷을 저장한 파일형식이다. Scapy는 Python에서 패킷의 구조를 읽고 다루는 도구다. 
+
+이번에는 준비된 두 PCAP를 읽어 같은 5초의 바이트 수를 비교하자.
+같은 5초의 패킷 양을 비교하고 요청 기록과 단위를 구분한다.
+<image src="../assets/lesson4.svg">설명용 그림. 같은 5초의 패킷 양을 비교하고 요청 기록과 단위를 구분한다.</image>
+그림의 입력 자료에서 비교 기준을 거쳐 확인할 결과로 읽어 보자.
+- 없는 TCP 부분을 무조건 읽지 않는다.
+- 244bytes와1220bytes의 기준 비교를 설명한다.
+- 2배와 6배에서 달라지는 후보 판단을 설명한다.
+<table_of_contents/>
+## 1단계. 요청 기록과 패킷의 단위 구분하기
+패킷은 네트워크에서 나누어 전달하는 데이터 묶음이다. HTTP 요청 기록은 앱이 요청 처리 결과를 남긴 자료이므로 패킷 한 개와 요청 한 건이 같지 않다.
+한 요청의 자료가 여러 패킷으로 나뉘거나 다시 전달될 수 있다. 패킷 수가 8개라고 HTTP 요청 8회를 처리했다고 말하지 않는다.
+<table header-row="true" fit-page-width="true">
+<tr>
+<td>자료</td>
+<td>세는 단위</td>
+<td>알려 주는 사실</td>
+</tr>
+<tr>
+<td>앞의 HTTP 기록</td>
+<td>앱 요청 한 건</td>
+<td>방법·경로·처리 상태</td>
+</tr>
+<tr>
+<td>오늘의 PCAP</td>
+<td>저장된 패킷 한 개</td>
+<td>주소·포트·전달 자료 길이</td>
+</tr>
+</table>
+TCP(Transmission Control Protocol)는 연결을 통해 데이터를 전달하는 방식이고 UDP(User Datagram Protocol)는 연결 설정 없이 데이터그램을 보내는 방식이다. 여기서는 TCP와 UDP 묶음에 다른 필드가 있다는 점만 읽어 보자.
+두 결과 비교하기
+1. HTTP 조회 12회와 PCAP 패킷 8개가 같은 사건인지 판단한다.
+2. 파일별 출처와 비교 단위를 말한다.
+<details>
+<summary>해설</summary>
+	실제 HTTP와 합성 PCAP는 독립 자료다. 한 화면에 결과를 표시해도 요청 수와 패킷 수를 더하거나 사용자 행동으로 합치지 않는다.
+</details>
+## 2단계. 첫 패킷의 주소와 포트 읽기
+자료는 monitor/backend/learning/data에 이미 준비됐다. 저장된 파일만 읽으므로 Windows에 패킷 캡처 드라이버를 설치하거나 관리자 권한으로 실시간 통신을 수집하지 않는다.
+```plain text
+C:\work\mini-watch-m5d3\monitor\backend\learning\
+├─ lesson4.py       ← 준비된 읽기/비교 코드
+└─ data\
+   ├─ normal.pcap    ← 정상 기준용 합성 자료
+   └─ observed.pcap  ← 비교할 합성 자료
+```
+첫 패킷을 읽는 부분
+```python
+from scapy.all import IP, TCP
+from learning.support import read_capture
+
+packets = read_capture("normal.pcap")
+first = packets[0]
+print("패킷 수", len(packets))
+print(first[IP].src, "->", first[IP].dst)
+print(first[TCP].sport, "->", first[TCP].dport)
+```
+```plain text
+패킷 수 4
+192.0.2.10 -> 198.51.100.20
+40001 -> 443
+```
+first\[IP\]는 첫 패킷의 IP 부분, first\[TCP\]는 TCP 부분을 읽는다. 주소는 보내는 곳과 받는 곳, 포트는 해당 통신에서 사용하는 번호다.
+두 주소는 교육용으로 정한 값이다. 목적지 포트가 443이라는 사실만으로 실제 HTTPS 연결이나 웹 요청을 확인한 것은 아니다.
+## 3단계. 여러 패킷에서 있는 부분만 읽기
+준비된 파일의 마지막 패킷에는 TCP 대신 UDP가 들어 있다. 없는 TCP 부분을 무조건 읽으면 오류가 나므로 어떤 부분이 있는지 먼저 확인한다.
+준비된 패킷 구분 코드
+```python
+from scapy.all import TCP, UDP
+
+for packet in packets:
+    if TCP in packet:
+        print("TCP", len(bytes(packet)))
+    elif UDP in packet:
+        print("UDP", len(bytes(packet)))
+```
+```plain text
+TCP 64
+TCP 64
+TCP 64
+UDP 52
+```
+bytes(packet)은 저장된 패킷의 바이트를 읽는다. 길이에는 Ethernet·IP·TCP/UDP 같은 부분도 포함되므로 글 내용이나 HTTP 본문 크기라고 해석하지 않는다.
+합계를 먼저 예상하기
+1. 64가 세 번과 52가 한 번인 길이를 더한다.
+2. UDP 패킷을 빼면 전체 양이 왜 달라지는지 설명한다.
+<details>
+<summary>해설</summary>
+	합계는244bytes다. 오늘의 비교는 TCP만이 아니라 같은 구간에 저장된 TCP와 UDP 패킷 전체를 대상으로 한다.
+</details>
+## 4단계. 같은 길이의 구간으로 기준 적용하기
+관찰 시간이 길면 패킷과 바이트가 늘어날 수 있다. 두 파일 모두 첫 패킷부터 5초를 사용하도록 준비된 함수가 범위를 맞춘다.
+`lesson4.py`의 비교 부분
+```python
+from learning.support import capture_summary
+from learning.checks import traffic_exceeded
+
+normal = capture_summary("normal.pcap")
+observed = capture_summary("observed.pcap")
+print(normal)
+print(observed)
+print("기준 초과", traffic_exceeded(normal, observed))
+```
+Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson4
+```
+아래는 전체 출력 중 마지막 통계와 판정 부분이다. 앞부분에는 패킷 수·주소·포트와 TCP/UDP 길이도 나온다.
+```plain text
+{'name': 'normal.pcap', 'seconds': 5, 'packets': 4, 'bytes': 244}
+{'name': 'observed.pcap', 'seconds': 5, 'packets': 8, 'bytes': 1220}
+기준 초과 True
+```
+관찰1220bytes는 정상244bytes의 2배인488bytes보다 크므로 후보로 표시한다. 평소 대용량 작업도 기준을 넘을 수 있으므로 이 계산만으로 공격을 확정하지 않는다.
+VS Code에서 monitor/backend/learning/lesson4.py의 마지막 print 줄을 아래 코드로 바꾸고 저장한다.
+`monitor/backend/learning/lesson4.py` — 마지막 줄
+```python
+print("기준 초과", traffic_exceeded(normal, observed, multiple=6))
+```
+기준 바꾸어 확인하기
+1. 수정한 파일에서 Ctrl+S를 눌러 저장한다.
+2. 아래 명령을 다시 실행하고 마지막 판정을 확인한다.
+Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson4
+```
+```plain text
+기준 초과 False
+```
+정상 6배는1464bytes이므로 같은 자료1220bytes가 이 기준은 넘지 않는다. 자료가 바뀐 것이 아니라 비교 기준이 달라진 것이다.
+확인 뒤 마지막 줄을 아래 원래 코드로 돌리고 Ctrl+S로 저장한다. 기본 결과는 2배 기준으로 유지한다.
+`monitor/backend/learning/lesson4.py` — 원래 마지막 줄
+```python
+print("기준 초과", traffic_exceeded(normal, observed))
+```
+## 챙겨 가기 — 비교한 단위를 말하기
+<table header-row="true" fit-page-width="true">
+<tr>
+<td>개념</td>
+<td>확인한 내용</td>
+</tr>
+<tr>
+<td>패킷/요청</td>
+<td>파일의 패킷 수와 앱 요청 수를 구분한다.</td>
+</tr>
+<tr>
+<td>PCAP/Scapy</td>
+<td>저장된 구조를 읽고 실제 값을 계산한다.</td>
+</tr>
+<tr>
+<td>구간/바이트 기준</td>
+<td>같은 5초에서 전체 길이를 비교하고 임계값의 효과를 설명한다.</td>
+</tr>
+</table>
+마지막에는 이 통계를 감시 화면에 표시하되 실제 HTTP의 횟수와 별도 출처로 남긴다.
+## 확인문제
+**확인문제 1.** PCAP는 무엇을 저장한 파일인가?
+<details>
+<summary>정답과 해설</summary>
+	패킷을 저장한 파일형식이다. 앱이 남긴 HTTP 요청 기록과 구분한다.
+</details>
+**확인문제 2.** Scapy는 이번 실습에서 무엇을 하는가?
+<details>
+<summary>정답과 해설</summary>
+	저장된 PCAP의 패킷 구조와 길이를 Python으로 읽는다. 실시간 패킷을 보내거나 캡처하지 않는다.
+</details>
+**확인문제 3.** 패킷 8개면 HTTP 요청 8회라고 말할 수 있는가?
+<details>
+<summary>정답과 해설</summary>
+	없다. 요청 하나가 여러 패킷으로 나뉘거나 다시 전달될 수 있으며 두 자료도 독립이다.
+</details>
+**확인문제 4.** 예제 첫 패킷의 출발지와 목적지는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	192.0.2.10에서198.51.100.20으로 간다. 학습 자료에 넣은 주소다.
+</details>
+**확인문제 5.** 목적지 포트 443만으로 HTTPS 성공을 확인한 것인가?
+<details>
+<summary>정답과 해설</summary>
+	아니다. 포트 번호를 읽었을 뿐 실제 TLS/HTTP 연결을 검사한 자료가 아니다.
+</details>
+**확인문제 6.** UDP 패킷에서 first\[TCP\]를 무조건 읽으면 왜 문제가 되는가?
+<details>
+<summary>정답과 해설</summary>
+	해당 부분이 없을 수 있다. TCP in packet처럼 있는지 확인하고 읽어야 한다.
+</details>
+**확인문제 7.** 정상 자료의 전체 저장 바이트는 얼마인가?
+<details>
+<summary>정답과 해설</summary>
+	64가 세 번과 52가 한 번이므로244bytes다. 헤더를 포함한 패킷 길이이다.
+</details>
+**확인문제 8.** 두 자료의 관찰 구간 길이를 맞추는 이유는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	길이 차이 때문에 양이 커진 결과를 기준 초과로 잘못 비교하지 않기 위해서다. 각각 첫 패킷부터 5초로 맞춘다.
+</details>
+**확인문제 9.** 2배 기준과 6배 기준에서1220bytes의 판정은 어떻게 다른가?
+<details>
+<summary>정답과 해설</summary>
+	2배488bytes는 넘지만 6배1464bytes는 넘지 않는다. 같은 자료에서도 기준에 따라 후보가 달라진다.
+</details>
+**확인문제 10.** 기준 초과가 실제 공격을 확정하지 않는 이유는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	정상적인 큰 전송도 양이 늘 수 있다. 이 합성 예제의 기준 초과는 추가로 검토할 신호다.
+</details>
+## 되새김 문제
+다음 질문에 말로 답할 수 있으면 이번 시간을 제대로 이해한 것이다.
+- 패킷 수와 HTTP 요청 수를 같다고 말하면 왜 문제가 되는가?
+- 같은1220bytes가 2배와 6배 기준에서 다르게 판단되는 이유는 무엇인가?
+- 바이트 기준 초과만으로 공격을 확정하지 못하는 이유는 무엇인가?
+다음 활동에서도 출처와 비교 기준을 확인하며 근거를 읽어 보자.

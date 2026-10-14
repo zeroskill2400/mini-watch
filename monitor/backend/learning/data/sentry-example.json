@@ -1,0 +1,10 @@
+{
+  "id": "s1",
+  "source": "sentry_demo",
+  "occurred_at": "2026-10-14T00:00:10Z",
+  "kind": "app_error",
+  "exception": "ZeroDivisionError",
+  "request_id": "demo-r42",
+  "actor": null,
+  "ip": null
+}

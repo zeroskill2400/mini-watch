@@ -1,0 +1,376 @@
+{
+  "type": "lesson",
+  "title": "5교시. IOC를 대조하고 사용자·시간 조건으로 연결하기",
+  "lead": "IOC(Indicator of Compromise)는 침해 의심을 확인할 때 대조하는 지표이다. 상관분석은 확인된 사용자·시간·순서 같은 조건으로 여러 기록의 관계를 확인하는 일이다.\n\n이번에는 교육용 IP 목록과 감사 기록을 비교하고 실패 뒤 다운로드가 이어진 후보를 찾아보자.",
+  "walkthrough": true,
+  "toc_block": true,
+  "toc_position": "after_preview",
+  "toc": [
+    "1단계. IOC 값이 일치하는 기록 찾기",
+    "2단계. 같은 사용자와 순서를 확인하기",
+    "3단계. 결과와 제외된 기록 대조하기",
+    "4단계. 실패 횟수 조건 바꾸기",
+    "챙겨 가기 — 연결할 근거가 있는지 확인하기"
+  ],
+  "preview": {
+    "intro": "지표값 일치와 사용자·시간 연결의 근거를 구분한다.",
+    "element": {
+      "kind": "sequence",
+      "items": [
+        {
+          "kind": "image",
+          "src": "../assets/lesson5.svg",
+          "caption": "설명용 그림. 지표값 일치와 사용자·시간 연결의 근거를 구분한다.",
+          "text_content": "값이 같은 기록과 조건이 이어진 기록 구분하기\nIOC 값 대조\n예제 IP: 203.0.113.66\n일치 원본ID 5개\n사용자·시간·순서 연결\nemployee-17: 실패a1 → 실패a2 → 다운로드a4\n실패2회 뒤 · 각 실패부터5분 이내\n검토 후보: 다운로드 a4 / 근거: 실패 a1·a2\na1 00:00:00 / a2 00:00:30 / a4 00:02:00\n제외: 다른 사용자a5 · 늦은a6 · 역순a7 · 사용자 미확인a8\nIP만 같다고 사용자를 연결하지 않는다.\n교육용 감사 자료 안에서 판단한다. 실제 HTTP/PCAP와 한 사건이 아니다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "그림의 입력 자료에서 비교 기준을 거쳐 확인할 결과로 읽어 보자."
+        },
+        {
+          "kind": "bullets",
+          "items": [
+            "일치한 원본 ID와 후보가 된 조건을 읽는다.",
+            "다른 사용자·역순·시간 범위 밖·미확인을 제외한다.",
+            "실패 2회와 3회 기준에서 결과 차이를 설명한다."
+          ]
+        }
+      ]
+    }
+  },
+  "sections": [
+    {
+      "heading": "1단계. IOC 값이 일치하는 기록 찾기",
+      "importance": "",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "indicators.json의203.0.113.66은 교육용으로 정한 IP다. 실제 악성 주소를 확인한 목록이 아니며 실습 결과에도 교육용이라고 표시한다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "입력 파일은 monitor/backend/learning/data에 있다. indicators.json은 대조할 IP 목록, audit-raw.json은 감사 원본 예제, actor-map.json은 확인된 사용자 대응표다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "준비된 감사 자료는 계정의 행동을 설명한다. ip 값이 목록에 있는지 확인하고 맞는 기록을 matches에 모으는 함수를 읽어 보자."
+        },
+        {
+          "kind": "code",
+          "lang": "python",
+          "src": "def find_ioc_matches(events, indicators):\n    matches = []\n    for event in events:\n        if event[\"ip\"] in indicators:\n            matches.append(event)\n    return matches\n",
+          "intent": "preview",
+          "verified": "example",
+          "label": "`checks.py` — 준비된 IOC 대조 함수"
+        },
+        {
+          "kind": "paragraph",
+          "text": "in은 해당 값이 목록 안에 있는지 확인한다. matches.append(event)는 일치한 기록 자체를 남겨 원본 ID를 다시 읽을 수 있게 한다."
+        },
+        {
+          "kind": "tool_steps",
+          "tool": "일치값과 의미 확인하기",
+          "steps": [
+            "indicators.json에서 예제 IP 한 개를 확인한다.",
+            "감사 자료에서 IP가 일치한 기록이 곧 침해 확정인지 판단한다."
+          ]
+        },
+        {
+          "kind": "details",
+          "summary": "해설",
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "값 일치는 추가로 검토할 신호다. 정상접속·공유IP·오래된지표 등 다른 설명이 있을 수 있으므로 IOC 일치만으로 침해를 확정하지 않는다."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "2단계. 같은 사용자와 순서를 확인하기",
+      "importance": "",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "준비된 대응표는 user-17과 mira@example.test를 employee-17로 연결한다. 이 확인된 공통 사용자 안에서 로그인 실패가 다운로드보다 앞에 있고 시간차가 5분 이내인지 검사한다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "UTC(협정세계시)는 이 예제의 시각 기준이다. 같은 UTC 시각끼리 차이를 비교하며 한국 현지 시각으로 바꿔 계산할 필요는 없다."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "원본 ID",
+            "시각(UTC)",
+            "공통 사용자",
+            "행동"
+          ],
+          "rows": [
+            [
+              "a1",
+              "00:00:00",
+              "employee-17",
+              "로그인 실패"
+            ],
+            [
+              "a2",
+              "00:00:30",
+              "employee-17",
+              "로그인 실패"
+            ],
+            [
+              "a4",
+              "00:02:00",
+              "employee-17",
+              "다운로드"
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "a1에서a4는 120초, a2에서a4는 90초이다. 둘 모두 먼저 일어났고 5분 이내이므로 실패 2회 뒤 다운로드라는 조건에 맞는다."
+        },
+        {
+          "kind": "code",
+          "lang": "python",
+          "src": "from learning.support import failures_before\n\ndef find_related_downloads(events, max_seconds=300):\n    related = []\n    for event in events:\n        if event[\"kind\"] == \"download\":\n            failures = failures_before(event, events, max_seconds)\n            if len(failures) >= 2:\n                related.append({\"download\": event, \"failures\": failures})\n    return related\n",
+          "intent": "preview",
+          "verified": "example",
+          "label": "`checks.py` — 준비된 순서 규칙"
+        },
+        {
+          "kind": "paragraph",
+          "text": "failures_before는 확인된 같은 사용자의 먼저 일어난 실패 중 300초 이내인 기록을 골라 주는 준비 함수다. 시간 파서를 새로 만들지 않고 여기서는 len(failures) >= 2 조건을 읽는다."
+        },
+        {
+          "kind": "tool_steps",
+          "tool": "연결 조건 예상하기",
+          "steps": [
+            "실패a1·a2와 다운로드a4의 사용자·순서·시간차를 확인한다.",
+            "실패가 한 번뿐이면 이 규칙에 맞는지 판단한다."
+          ]
+        },
+        {
+          "kind": "details",
+          "summary": "해설",
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "실패 2회 이상이라는 조건이 있으므로 한 번으로는 맞지 않는다. 같은 IP라는 사실도 이 조건의 사용자 확인 근거를 대신하지 않는다."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "3단계. 결과와 제외된 기록 대조하기",
+      "importance": "",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "같은 저장소의 Windows CMD에서 준비된 lesson5.py를 실행한다. 사용자 대응표와 날짜 읽기는 준비 코드로 처리한다."
+        },
+        {
+          "kind": "code",
+          "lang": "text",
+          "src": "docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson5",
+          "intent": "preview",
+          "verified": "example",
+          "label": "Windows CMD"
+        },
+        {
+          "kind": "code",
+          "lang": "text",
+          "src": "IOC 근거 ['a1', 'a2', 'a3', 'a4', 'a8']\n연결 employee-17 ['a1', 'a2'] -> a4",
+          "intent": "preview",
+          "verified": "example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "IOC 일치 5건과 사용자·시간 후보 1건은 다른 규칙의 결과다. 같은 기록이 여러 규칙에 들어가므로 두 숫자를 더해 사건 6건이라고 말하지 않는다."
+        },
+        {
+          "kind": "table",
+          "headers": [
+            "기록",
+            "순서 규칙에서 제외하는 이유"
+          ],
+          "rows": [
+            [
+              "a5",
+              "다른 사용자 employee-23"
+            ],
+            [
+              "a6",
+              "관련 실패에서 5분을 넘은 다운로드"
+            ],
+            [
+              "a7",
+              "실패보다 먼저 일어난 다운로드"
+            ],
+            [
+              "a8",
+              "IP는 같아도 공통 사용자 미확인"
+            ]
+          ]
+        },
+        {
+          "kind": "tool_steps",
+          "tool": "후보와 제외 근거 말하기",
+          "steps": [
+            "a8이 IOC에는 있고 사용자·시간 후보에는 없는 이유를 말한다.",
+            "a6의 시간을a1·a2와 대조해 5분 범위를 확인한다."
+          ]
+        },
+        {
+          "kind": "details",
+          "summary": "해설",
+          "body": [
+            {
+              "kind": "paragraph",
+              "text": "a8은 값이 일치하므로 IOC 결과에 남지만 대응표에 사용자 근거가 없다. a6은00:08:00이므로 a1·a2 뒤 5분 범위를 넘는다. 서로 다른 조건을 읽어야 결과를 설명할 수 있다."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "4단계. 실패 횟수 조건 바꾸기",
+      "importance": "",
+      "body": [
+        {
+          "kind": "paragraph",
+          "text": "VS Code에서 checks.py의 find_related_downloads 함수 안 len(failures) >= 2를 len(failures) >= 3으로 바꾸고 Ctrl+S로 저장한다."
+        },
+        {
+          "kind": "code",
+          "lang": "text",
+          "src": "docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson5",
+          "intent": "preview",
+          "verified": "example",
+          "label": "Windows CMD"
+        },
+        {
+          "kind": "code",
+          "lang": "text",
+          "src": "IOC 근거 ['a1', 'a2', 'a3', 'a4', 'a8']\n연결 결과 없음",
+          "intent": "preview",
+          "verified": "example"
+        },
+        {
+          "kind": "paragraph",
+          "text": "같은 자료에서 실패가 두 번뿐이므로 3회 조건에는 맞지 않는다. IOC 대조 조건은 수정하지 않았으므로 일치 ID는 그대로다."
+        },
+        {
+          "kind": "paragraph",
+          "text": "확인 뒤 len(failures) >= 2로 돌리고 저장한다. 마지막 화면은 실패 2회 조건을 사용한다."
+        }
+      ]
+    },
+    {
+      "heading": "챙겨 가기 — 연결할 근거가 있는지 확인하기",
+      "importance": "",
+      "body": [
+        {
+          "kind": "table",
+          "headers": [
+            "개념",
+            "가져갈 판단"
+          ],
+          "rows": [
+            [
+              "IOC",
+              "지표값 일치와 침해 확정을 구분한다."
+            ],
+            [
+              "상관분석",
+              "확인된 같은 사용자·행동 순서·시간 범위를 모두 확인한다."
+            ],
+            [
+              "근거",
+              "원본 ID와 제외 사례를 읽어 후보가 된 이유를 설명한다."
+            ]
+          ]
+        },
+        {
+          "kind": "paragraph",
+          "text": "다음에는 준비된 API와 화면에 이 결과를 표시한다. 실제 HTTP·합성 PCAP·교육용 감사 자료의 출처는 끝까지 구분한다."
+        }
+      ]
+    }
+  ],
+  "confirmation_questions": [
+    {
+      "question": "IOC가 무엇인가?",
+      "answer": "침해 의심을 검토할 때 대조하는 지표다. 이 시간의 IP 목록은 교육용 예제다."
+    },
+    {
+      "question": "203.0.113.66을 실제 악성 주소로 확인했는가?",
+      "answer": "아니다. 실습을 위해 정한 예제값이며 실제 평판 조회 결과가 아니다."
+    },
+    {
+      "question": "IOC에 일치한 원본 ID는 무엇인가?",
+      "answer": "a1·a2·a3·a4·a8이다. 일치한 원본 기록을 근거로 남긴다."
+    },
+    {
+      "question": "IP가 같으면 같은 사용자로 연결하는가?",
+      "answer": "아니다. 확인된 대응표가 필요하며 공유 IP 등 다른 가능성도 있다."
+    },
+    {
+      "question": "순서 규칙의 세 가지 주요 연결 조건은 무엇인가?",
+      "answer": "확인된 같은 사용자, 실패가 다운로드보다 먼저 일어남, 각 실패와 다운로드의 차이가 5분 이내임이다."
+    },
+    {
+      "question": "a1과a2가a4의 실패 근거인 이유는 무엇인가?",
+      "answer": "같은 employee-17이고 각각 120초·90초 전에 일어나 5분 범위에 들며 실패 2회를 채운다."
+    },
+    {
+      "question": "a5·a6·a7은 왜 제외되는가?",
+      "answer": "a5는 다른 사용자, a6은 시간 범위 밖, a7은 실패보다 먼저 일어난 다운로드이기 때문이다."
+    },
+    {
+      "question": "a8은 IOC에 있는데 순서 규칙에는 왜 없는가?",
+      "answer": "IP 값은 일치하지만 공통 사용자 대응 관계가 확인되지 않았다."
+    },
+    {
+      "question": "실패 조건을 2에서 3으로 바꾸면 무엇이 달라지는가?",
+      "answer": "같은 자료의 실패가 두 번뿐이므로 사용자·시간 후보가 없어진다. IOC 조건은 그대로라 ID도 그대로다."
+    },
+    {
+      "question": "IOC5건과 연결 후보 1건을 사건 6건이라고 더할 수 있는가?",
+      "answer": "없다. 서로 다른 규칙 결과이고 같은 원본 기록이 겹칠 수 있다. 실제 침해 사건 수도 아니다."
+    }
+  ],
+  "review": [
+    "IOC에 일치했다는 사실만으로 침해를 확정하지 못하는 이유는 무엇인가?",
+    "같은 사용자·순서·5분 범위를 모두 확인해야 하는 이유는 무엇인가?",
+    "a8이 두 규칙에서 다르게 처리되는 이유는 무엇인가?"
+  ],
+  "closing": "다음 활동에서도 출처와 비교 기준을 확인하며 근거를 읽어 보자.",
+  "closing_position": "end",
+  "learning_terms_version": 2,
+  "learning_terms": [
+    {
+      "term": "IOC",
+      "aliases": [],
+      "introduced_by": "IOC(Indicator of Compromise)는 침해 의심을 확인할 때 대조하는 지표이다.",
+      "explanation": {
+        "kind": "new",
+        "why": "교육용 IP 목록과 감사 기록을 비교하고",
+        "example": "indicators.json의203.0.113.66"
+      }
+    },
+    {
+      "term": "상관분석",
+      "aliases": [],
+      "introduced_by": "상관분석은 확인된 사용자·시간·순서 같은 조건으로 여러 기록의 관계를 확인하는 일이다.",
+      "explanation": {
+        "kind": "new",
+        "why": "실패 뒤 다운로드가 이어진 후보를 찾아보자.",
+        "example": "a1에서a4는 120초"
+      }
+    }
+  ]
+}
