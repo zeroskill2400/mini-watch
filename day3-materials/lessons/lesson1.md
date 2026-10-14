@@ -13,28 +13,45 @@ C:\work\mini-watch-m5d3\
 └─ compose-monitor.yaml
 ```
 <table_of_contents/>
-## 1단계. DB와 감시 화면에서 활동 기록 확인하기
-4과목 공통 실습 환경 준비를 마쳤다면 일반 화면 http://localhost:8081과 감시 화면 http://localhost:8082를 연다. 자신의 기존 일반 계정과 감시 계정으로 로그인해 둔다.
-새 환경에서 시작하거나 두 화면이 열리지 않으면 [4과목 공통 실습 환경 준비](https://app.notion.com/p/3f9ae3d1800c81b0ba61cf483bd35724)부터 확인한다. 이미 동작하는 환경은 DB를 다시 만들지 않는다.
-### 먼저 DB에 저장된 기록 보기
-목록 조회 한 건을 만들어 보자.
-1. 일반 화면의 게시글 목록에서 새로고침한다.
-2. 저장소 루트의 Windows CMD에서 아래 읽기 명령을 실행한다.
+## 1단계. 동작 전후의 DB와 감시 기록 비교하기
+이번에는 동작 전 DB → 일반 화면의 요청 → 동작 후 DB → 감시 표 순서로 확인한다. 먼저 준비한 저장소의 루트에서 Windows CMD를 연다.
+도구·Git·Compose·계정 준비가 안 됐다면 [4과목 공통 실습 환경 준비](https://app.notion.com/p/3f9ae3d1800c81b0ba61cf483bd35724)를 먼저 마친다.
+### 동작 전 DB의 현재 기록 확인하기
+새 감시 DB의 http\_events는 빈 테이블로 시작한다. Docker 실행만으로 general의 활동 기록 한 건이 만들어지지는 않는다.
 Windows CMD
 ```plain text
 docker compose -f compose-monitor.yaml exec monitor-db psql -U sample -d monitor_db -c "SELECT id, method, path, status_code, event_type FROM http_events ORDER BY id DESC LIMIT 5;"
 ```
+아래는 새 DB가 아직 일반 서비스의 요청을 받지 않았을 때의 출력 형태 예시다.
 ```plain text
-확인할 행: GET | / | 200 | post_list
-ID는 내 DB에 저장된 순서에 따라 다르다.
+ id | method | path | status_code | event_type
+----+--------+------+-------------+------------
+(0 rows)
 ```
-SELECT는 저장된 행을 읽는 SQL이다. 이 명령은 최근 5건의 ID·방법·경로·상태·종류를 읽으며 DB를 수정하지 않는다.
-general에서 처리한 요청은 monitor\_db의 http\_events 테이블에 저장된다. 일반 DB의 게시글 내용과 감시 DB의 요청 기록은 서로 다른 자료다.
-### 감시 화면에서 같은 기록 보기
-DB의 기록을 화면에서 확인하자.
-1. 감시 화면에서 기록 불러오기를 누른다.
-2. 종류 post\_list·방법 GET·경로 /·상태 200인 행을 찾는다.
-이 표는 monitor가 자기 DB에서 읽어 온 기록이다. 이제 general에서 글을 다룰 때 어떤 행이 늘어나는지 대조해 보자.
+환경 준비 중 일반 화면을 열거나 로그인했다면 이미 그 요청이 저장됐을 수 있다. 기존 DB를 이어 쓰는 학생도 이전 행이 보이므로 현재 최근 행의 ID를 읽어 두고 다음 동작 전후를 비교한다.
+SELECT는 저장된 행을 읽는 SQL이다. 이 명령은 최근 5건을 읽으며 DB를 수정하지 않는다.
+### 일반 화면에서 요청을 만들고 DB 다시 보기
+이번에 만든 요청이 늘어나는지 확인하자.
+1. 일반 화면 http://localhost:8081을 열어 게시글 목록을 확인한다. 이미 열려 있다면 새로고침한다.
+2. 아래의 같은 DB 읽기 명령을 다시 실행한다.
+Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-db psql -U sample -d monitor_db -c "SELECT id, method, path, status_code, event_type FROM http_events ORDER BY id DESC LIMIT 5;"
+```
+아래는 새로 저장된 목록 조회 행의 출력 형태 예시다. 12는 예시 ID이며 실제 조회 결과의 ID와 행 수는 내 DB에 따라 다르다.
+```plain text
+ id | method | path | status_code | event_type
+----+--------+------+-------------+------------
+ 12 | GET    | /    |         200 | post_list
+(1 row)
+```
+동작 전 결과와 비교해 새 ID의 GET·경로 /·상태200·종류 post\_list 행을 찾는다. 로그인이나 다른 화면 요청도 기록되므로 전체 결과가 정확히 한 행이라는 뜻은 아니다.
+LIMIT 5는 최대 5건을 읽는 조건이다. 일반 DB의 게시글과 감시 DB의 http\_events 요청 기록은 서로 다른 목적의 자료다.
+### 감시 화면에서 수집된 요청 확인하기
+DB에서 본 요청 형태를 감시 표에서 확인하자.
+1. 감시 화면 http://localhost:8082에서 자신의 감시 계정으로 로그인한다.
+2. 기록 불러오기를 누르고 post\_list·GET·경로 /·상태200인 행을 찾는다.
+이 표는 monitor가 자기 DB에서 읽어 온 기록이다. DB에서는 ID로 전후를 비교했고, 현재 감시 표에서는 종류·방법·경로·상태를 확인한다.
 ### 전송 전 JSON과 dump 파일 보기
 general은 요청 결과를 JSON으로 표준 출력에 남긴 뒤 monitor로 보낸다. 표준 출력은 실행 중인 프로그램이 콘솔로 내보내는 글이며 Docker 실행 로그에서 읽을 수 있다.
 Windows CMD
@@ -63,6 +80,7 @@ docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.ex
 	logs/general-events.jsonl은 감시DB 행의 사본이며 전송 당시 원문 전체가 아니다. 일반 출력에 있어도 전송 실패로 감시DB에 없을 수 있으므로 두 자료를 대조할 수 있다.
 </details>
 ## 2단계. 일반 화면에서 새 글 쓰기
+글을 쓰기 전에 일반 화면에서 자신의 일반 계정으로 로그인한다. 이미 로그인했다면 그 상태를 사용한다. 감시 계정으로 로그인한 상태와 일반 계정의 로그인 상태는 별개다.
 이번 관찰에 사용할 실습용 글을 하나 만든다. 입력한 글 내용은 일반 DB에, 그 요청의 기록은 감시 DB에 각각 남는다.
 실습용 게시글 만들기
 1. 일반 화면에서 새 게시글 작성을 누른다.
