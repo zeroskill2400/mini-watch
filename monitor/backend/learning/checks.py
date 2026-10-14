@@ -6,8 +6,11 @@ def count_views(events):
     for event in events:
         valid_method = event["method"] == "GET"
         # >>>>> 수정 시작 (목록 조회 조건과 횟수) >>>>>
-        # 경로 /, 상태200, 종류post_list인지 각각 확인한다.
-        # 방법까지 네 조건이 맞으면 total에1을 더한다.
+        valid_path = event["path"] == "/"
+        valid_status = event["status_code"] == 200
+        valid_kind = event["kind"] == "post_list"
+        if valid_method and valid_path and valid_status and valid_kind:
+            total += 1
         # <<<<< 수정 끝 <<<<<
     return total
 
