@@ -12,7 +12,7 @@ from observability import configure_errors
 configure_errors('mini-general')
 app = Flask(__name__)
 app.json.ensure_ascii = False
-configure_session(app, "general_session")
+configure_session(app, "day4_general_session")
 app.register_blueprint(posts_bp)
 app.register_blueprint(auth_bp)
 app.context_processor(template_auth)

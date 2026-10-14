@@ -5,9 +5,10 @@ async function forward(request, context) {
   const { path } = await context.params;
   // 앱 화면이 사용하는 경로만 전달한다. 이벤트 수신 POST는 일반 서버 전용이다.
   const resource = path.join('/');
-  const allowed = /^(auth\/(me|login|logout)|events|analysis(\/raw)?|notes(\/\d+)?|sentry-test)$/.test(resource);
-  const readOnly = resource === 'events' || resource === 'analysis' || resource === 'analysis/raw';
-  if (!allowed || (readOnly && request.method !== 'GET')) {
+  const allowed = /^(auth\/(me|login|logout)|events|analysis(\/raw)?|detection(\/start)?|notes(\/\d+)?|sentry-test)$/.test(resource);
+  const readOnly = resource === 'events' || resource === 'analysis' || resource === 'analysis/raw' || resource === 'detection';
+  const startObservation = resource === 'detection/start';
+  if (!allowed || (readOnly && request.method !== 'GET') || (startObservation && request.method !== 'POST')) {
     return Response.json({ error: '지원하지 않는 API 요청입니다.' }, { status: 404 });
   }
   const base = process.env.MONITOR_API_URL;

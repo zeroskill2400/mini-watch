@@ -1,12 +1,26 @@
 import json
 import os
+from datetime import datetime, timezone
+from threading import Lock
+from uuid import uuid4
 import requests
-from flask import current_app, request
+from flask import current_app, g, request
 
 MONITOR_URL = os.environ['MONITOR_URL']
 EVENT_TOKEN = os.environ['EVENT_TOKEN']
 if len(EVENT_TOKEN) < 32 or EVENT_TOKEN.startswith('CHANGE_ME'):
     raise RuntimeError('EVENT_TOKEN에 직접 생성한 32자 이상의 값을 설정해 주세요.')
+
+LOG_LOCK = Lock()
+
+
+def authentication_event(username, result):
+    return {
+        'event_id': str(uuid4()),
+        'occurred_at': datetime.now(timezone.utc).isoformat(timespec='microseconds'),
+        'attempted_username': username,
+        'event_type': result,
+    }
 
 
 def record_request(response):
@@ -17,12 +31,13 @@ def record_request(response):
         'path': request.path,
         'status_code': response.status_code,
     }
+    event.update(getattr(g, 'auth_event', {}))
     log_line = json.dumps(event, ensure_ascii=False)
     print(log_line, flush=True)
     log_path = os.environ.get('REQUEST_LOG_PATH')
     if log_path:
         try:
-            with open(log_path, 'a', encoding='utf-8') as log_file:
+            with LOG_LOCK, open(log_path, 'a', encoding='utf-8') as log_file:
                 log_file.write(log_line + '\n')
         except OSError:
             current_app.logger.warning('실습용 JSONL 파일에 요청 기록을 쓰지 못했습니다.')

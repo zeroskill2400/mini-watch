@@ -1,7 +1,8 @@
-from flask import Blueprint, request, session, render_template, redirect
+from flask import Blueprint, g, request, session, render_template, redirect
 from werkzeug.security import check_password_hash
 from auth_helpers import csrf_token, current_user, valid_csrf
 from repositories import users as user_repository
+from request_logging import authentication_event
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -29,8 +30,10 @@ def login():
 
     user = user_repository.find_user(username.strip())
     if user is None or not check_password_hash(user["password_hash"], password):
+        g.auth_event = authentication_event(username.strip(), "auth_failure")
         return {"error": "아이디 또는 비밀번호가 올바르지 않습니다."}, 401
 
+    g.auth_event = authentication_event(username.strip(), "auth_success")
     session.clear()
     session["user_id"] = user["id"]
     return {

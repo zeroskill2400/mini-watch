@@ -4,6 +4,7 @@ from routes.auth import auth_bp
 from routes.events import events_bp
 from routes.notes import notes_bp
 from routes.analysis import analysis_bp
+from routes.detection import detection_bp
 from auth_helpers import configure_session, no_cache
 from error_handlers import register_error_handlers
 
@@ -13,11 +14,12 @@ from observability import configure_errors
 configure_errors('mini-monitor')
 app = Flask(__name__)
 app.json.ensure_ascii = False
-configure_session(app, "monitor_session")
+configure_session(app, "day4_monitor_session")
 app.register_blueprint(auth_bp)
 app.register_blueprint(events_bp)
 app.register_blueprint(notes_bp)
 app.register_blueprint(analysis_bp)
+app.register_blueprint(detection_bp)
 register_error_handlers(app)
 app.after_request(no_cache)
 

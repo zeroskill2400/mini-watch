@@ -1,76 +1,85 @@
-# mini-watch — 5과목 Day3 수업 완성본
+# Day4 1교시 — 로그에서 반복 로그인 실패 경고로
 
-일반 게시판에서 직접 로그인·조회·없는 주소 요청을 해 보고, Flask JSON과 Nginx 텍스트에 남은 기록을 공통 형식으로 바꿉니다. **SIEM의 로그 정규화·통합 조회 일부**를 만드는 수업입니다. 자동 차단이나 XDR 전체를 구현하지 않습니다.
+Day3에서 본 앱·Nginx 원본과 통합 로그를 그대로 제공하고, 앱의 실제 인증 결과로 반복 실패를 찾는다. 일반 사이트에서 같은 아이디로 60초 안에 세 번 틀린 비밀번호를 입력하면 감시 화면에 경고 하나와 근거 세 건이 표시된다. 한 번의 실패에는 경고가 없다. 이는 수업용 탐지 조건이지 공격 확정이나 자동차단이 아니다.
 
 ## 시작
 
-Docker Desktop을 실행한 뒤 이 프로젝트 폴더의 터미널에서 실행합니다.
+Day3에서 사용한 Git과 Docker를 그대로 사용한다. Docker Desktop 또는 Linux Docker Engine과 Docker Compose가 실행 중이어야 한다. 같은 저장소의 `m5d4-start` 브랜치를 새 `mini-watch-day4` 폴더로 받는다. Day3 폴더에 덮어쓰거나 파일을 옮길 필요가 없다. 이 시작본에는 계정·DB·원본 수집·규칙·화면이 준비되어 있으며, 예제 실패 로그는 미리 넣지 않았다.
 
-```text
-docker compose up -d --build
+Windows PowerShell 또는 CMD:
+
+```powershell
+cd C:\work
+git clone --branch m5d4-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day4
+cd mini-watch-day4
+.\start-class.cmd
 ```
 
-한 명령이 일반 게시판과 감시 화면, 각 DB, 게이트웨이, 수업 계정을 준비합니다. 시작 명령은 실습 요청을 대신 보내거나 분석용 로그 묶음을 만들지 않습니다. 처음에는 원본이 비어 있어도 정상입니다.
+Linux 또는 macOS:
 
-| 화면 | 주소 | 아이디 | 공개 실습 비밀번호 |
-|---|---|---|---|
-| 일반 게시판 | http://localhost:8081/login | `class-student` | `classroom1234!` |
-| 감시 화면 | http://localhost:8082 | `class-operator` | `classroom1234!` |
-
-각 화면에서 아이디·비밀번호를 입력하고 `로그인`을 누릅니다. 일반 목록의 `class-student 님이 로그인했습니다.`, 감시 화면의 `class-operator 사용자`로 성공을 확인합니다. 첫 빌드 직후 화면이 아직 열리지 않으면 잠시 기다린 뒤 다시 엽니다.
-
-## 직접 동작하고 기록 확인하기
-
-1. 일반 게시판에서 로그인한 뒤 목록을 엽니다.
-2. 브라우저 주소창에 `http://localhost:8081/training-missing`을 입력해 없는 경로의 404 응답을 확인합니다.
-3. 감시 화면에서 원본을 다시 불러와 해당 경로와 상태가 두 출처에 남았는지 확인합니다.
-4. 3~5교시에서 네 함수를 완성한 뒤 분석 결과를 다시 불러옵니다. 일반 게시판에서 동작을 추가하고 다시 불러오면 현재 로그로 결과가 바뀝니다.
-
-자동 새로고침은 하지 않습니다. 로그인 뒤 이동·화면 파일·브라우저의 추가 요청도 기록되므로 클릭 수와 로그 행 수는 같지 않습니다. 앱과 Nginx가 각 요청을 기록하므로 관측 행 수를 요청 수나 공격 수로 읽지 않습니다.
-
-## 수업에서 작성할 파일
-
-`monitor/backend/learning`에서 아래 네 파일을 교시 순서대로 작성합니다.
-
-| 교시 | 파일 | 결과 |
-|---|---|---|
-| 3 | `normalize_app.py` | 현재 Flask JSON 원본을 공통 항목으로 변환 |
-| 4 | `normalize_nginx.py` | 현재 Nginx 텍스트 원본을 같은 항목으로 변환 |
-| 5 | `merge.py` | 두 출처의 관측을 한 목록으로 연결 |
-| 5 | `report.py` | 전체 관측과 상태 400 이상인 오류 관측 집계 |
-| 6 | 제공된 감시 화면 | 추가 동작 전후 비교·출처/오류 필터·원본 확인 |
-
-이 폴더의 네 함수는 완성되어 있습니다. 수업에서는 시작본의 빈 틀에 각 교시의 코드를 직접 저장해 완성합니다.
-
-공통 항목은 `id/source/method/path/status_code/raw`입니다. 앱 원본에 없는 시각을 만들지 않으며, Nginx의 원본 시각은 `raw`에 남깁니다. `app-1`·`nginx-1`은 각 출처 파일의 행 번호이지 공통 요청 ID가 아닙니다.
-
-## 준비된 코드의 역할
-
-- `general/request_logging.py`: 일반 게시판 응답의 방법·경로·상태를 JSONL에 추가하고 기존 감시 DB에도 전송합니다.
-- `gateways/general.conf`: 일반 게시판 앞 Nginx가 자신의 접근 로그를 남깁니다.
-- `learning/log_data.py`: 공유된 두 로그 파일의 현재 내용을 읽습니다. 새 요청을 보내거나 원본을 수정하지 않습니다.
-- `GET /api/analysis/raw`: 로그인한 운영자에게 현재 원본을 반환합니다. 정규화 함수가 미완성이어도 읽을 수 있습니다.
-- `GET /api/analysis`: 학생이 작성한 함수로 현재 원본을 정규화·합치기·집계합니다.
-
-원본 파일은 프로젝트의 `classroom-logs/app.jsonl`과 `classroom-logs/nginx.log`입니다. 일반 앱·Nginx만 쓰고 감시 API는 읽기 전용으로 공유합니다. 파일이 아직 없으면 빈 목록으로 표시하고, 기록 중인 마지막 미완성 줄은 다음 조회에서 읽습니다. 두 파일을 읽는 사이 새 요청이 들어오면 출처별 행 수가 잠시 다를 수 있습니다.
-
-기존 `/api/events`는 Flask가 전송한 DB 요청 기록이며 두 출처의 통합 분석과 입력 경로가 다릅니다. 통합 분석은 DB나 고정 `case.json`이 아닌 현재 두 원본 파일을 사용합니다.
-
-## 실행 상태와 보존
-
-서비스 상태와 오류는 같은 프로젝트 폴더에서 확인합니다.
-
-```text
-docker compose ps
-docker compose logs --tail 30 general-api general-gateway monitor-api
+```bash
+mkdir -p ~/work
+cd ~/work
+git clone --branch m5d4-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day4
+cd mini-watch-day4
+sh start-class.sh
 ```
 
-수업을 마치면 실행만 멈춥니다.
+이미 받은 폴더가 있다면 다시 clone하지 않고 그 폴더에서 시작 명령만 실행한다. Windows의 `C:\work`가 없다면 탐색기에서 먼저 만든다. 소스를 볼 때는 VS Code에서 파일 → 폴더 열기로 `mini-watch-day4`를 연다.
 
-```text
-docker compose stop
+첫 실행에서는 이미지를 내려받고 빌드하므로 인터넷 연결과 여유 시간이 필요하다. 시작 명령은 두 Compose를 실행하고 서비스가 정상 응답할 때까지 기다린다. 실패했으면 출력된 오류를 먼저 확인한다.
+
+| 사이트 | 주소 | 아이디 | 비밀번호 |
+| --- | --- | --- | --- |
+| 일반 사이트 | http://localhost:8083/login | class-student | classroom1234! |
+| 감시 사이트 | http://localhost:8084 | class-operator | classroom1234! |
+
+수업용 공개 계정과 설정이다. 인터넷 서버에 그대로 배포하지 않는다. 두 사이트는 `localhost` 주소를 사용한다. `127.0.0.1`과 섞으면 브라우저 쿠키가 서로 달라진다.
+
+## 직접 확인
+
+1. 감시 사이트에 `class-operator`로 로그인한다. 일반 사이트는 로그인 입력 화면에 둔다. 이미 로그인되어 있으면 일반 사이트의 로그아웃을 누른다.
+2. 감시 화면에서 **새 관찰 시작**을 누른다. 시작 시각 이후의 기록만 이번 관찰에 포함한다. 기존 원본 파일은 삭제하지 않는다.
+3. 일반 사이트에 아이디 `class-student`, 틀린 비밀번호 `wrong-password`를 입력하고 로그인한다. 실패 메시지를 확인한 뒤 감시 화면의 **탐지 새로고침**을 누른다. 실패 1회, 경고 0건이다.
+4. 첫 실패로부터 60초가 지나기 전에 같은 아이디와 틀린 비밀번호로 두 번 더 로그인한다. 입력한 비밀번호는 시도 후 비워지므로 매번 다시 입력한다. 감시 화면에서 **탐지 새로고침**을 누른다.
+5. 경고의 근거를 열고 서로 다른 이벤트 ID 세 개, 같은 입력 아이디, 발생 시각, `POST /auth/login`, 상태 `401`을 확인한다. 앱과 Nginx를 합쳐 여섯 번으로 세지 않는다.
+6. 시간이 지나 세 번이 한 시간창에 들지 않았다면 **새 관찰 시작**부터 다시 해 본다. 정상 비밀번호로 로그인해도 실패 횟수는 늘지 않으며, 기존 경고는 저절로 지워지지 않는다.
+
+현재 횟수는 조회 시점의 최근 60초다. 경고는 이번 관찰 중 조건을 처음 만족한 시점의 근거를 유지하므로 60초가 지나 현재 횟수가 0이 되어도 남는다. 같은 관찰에서 같은 아이디에 대한 경고는 하나만 만든다. 새로고침으로 같은 이벤트를 다시 세지 않는다. 여러 운영자 탭은 같은 PC의 관찰을 공유한다.
+
+실패 시 입력한 아이디는 시도 대상 이름일 뿐 로그인한 사람의 신원이 아니다. 오타, 자동 완성, 정상 사용자의 반복 실수도 이 조건에 걸릴 수 있다. 로그인 성공은 실패 횟수를 더하지 않지만 이 단순 규칙의 시간창을 초기화하지도 않는다.
+
+## 어느 코드가 만드는가
+
+- `general/routes/auth.py`: 실제 계정·비밀번호 확인 결과에 따라 인증 성공 또는 실패 정보를 남긴다.
+- `general/request_logging.py`: 이벤트 ID·UTC 발생 시각·입력 아이디·인증 결과를 기존 요청 정보에 더해 `/classroom-logs/app.jsonl`에 기록한다. 비밀번호는 기록하지 않는다.
+- `gateways/general.conf`: 같은 요청을 앞단 웹서버의 `/classroom-logs/nginx.log`에 기록한다. 탐지 횟수에는 앱 인증 결과만 사용한다.
+- `monitor/backend/detection_rules.py`: 같은 입력 아이디의 시간창 안 실패를 모아 `len(window) >= THRESHOLD`를 확인한다.
+- `monitor/backend/detection_service.py`: 원본을 읽고 이벤트 ID 중복을 제외한다. 관찰 시작 정보를 별도 볼륨에 보존한다.
+- 감시의 탐지 화면은 **탐지 새로고침**을 누를 때 현재 원본으로 계산한다. 백그라운드 실시간 푸시나 이메일·Slack 알림은 아니다.
+
+## Linux 원본 확인
+
+아래 명령은 프로젝트 폴더의 호스트 터미널에서 실행한다. 명령 안의 `sh -c`와 `tail`은 Linux 컨테이너에서 실행된다. 원본 전체를 삭제하거나 편집하지 않는다.
+
+```bash
+docker compose -f compose-general.yaml exec general-api sh -c 'tail -n 8 /classroom-logs/app.jsonl'
+docker compose -f compose-general.yaml exec general-gateway sh -c 'tail -n 8 /classroom-logs/nginx.log'
 ```
 
-이 설정과 공개 비밀번호는 개인 PC 수업용입니다. 공개 포트는 `127.0.0.1:8081`·`127.0.0.1:8082`입니다. 이전 실습이 같은 포트를 사용 중이면 Docker Desktop에서 그 프로젝트만 Stop합니다. Day3는 `m5d3-classroom` 프로젝트와 전용 DB 볼륨을 사용하며, 기존 Day의 DB나 이전 Day3 볼륨을 지우지 않습니다. 재실행은 계정·게시글·DB·로그 파일을 보존합니다. 같은 이름의 계정이 있으면 기존 비밀번호를 유지합니다. `down -v`나 초기 SQL 재실행은 하지 않습니다.
+Windows CMD에서는 작은따옴표 대신 큰따옴표로 `sh -c` 뒤를 감싼다. PowerShell에서는 위 명령을 그대로 사용한다.
 
-`start-class.cmd`·`start-class.sh`는 같은 Compose 명령을 실행하는 선택 편의 파일일 뿐 필수 절차가 아닙니다. 두 분리 Compose 파일은 호환용으로 남아 있으며, 수업에서는 기본 `compose.yaml`만 사용합니다.
+## 서비스 확인과 종료
+
+```bash
+docker compose -f compose-general.yaml ps
+docker compose -f compose-monitor.yaml ps
+docker compose -f compose-general.yaml down
+docker compose -f compose-monitor.yaml down
+```
+
+두 Compose 프로젝트는 `m5d4-general`·`m5d4-monitor`이며 API끼리 `m5d4-events` 네트워크를 사용한다. 원본은 공통 Docker 볼륨 `m5d4-classroom-logs`, 일반 DB·감시 DB·관찰 시작 정보는 별도 Day4 볼륨에 저장된다. 호스트 폴더 바인드 마운트는 사용하지 않는다. Day3의 컨테이너·8081/8082 포트·DB·원본·로그인 쿠키와 분리했다.
+
+`down`은 컨테이너와 프로젝트 내부 네트워크만 내린다. 다시 시작하면 DB·원본·관찰 기록이 남는다. 새 수업 관찰은 화면의 **새 관찰 시작**으로 시작한다. `down -v`나 `docker volume rm`은 필요 없다.
+
+이 자료는 Day4 1교시 준비본이다. 파일 감시·다른 영역의 근거 연결·AI API 호출·승인·조치 자동화는 구현하지 않았다.
