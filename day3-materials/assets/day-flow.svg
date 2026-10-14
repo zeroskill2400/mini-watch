@@ -1,41 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="510" viewBox="0 0 1040 510">
-<rect width="1040" height="510" rx="18" fill="#f5f8fc"/>
-<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#476b96"/></marker></defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="1184" height="584" viewBox="-32 -32 1184 584" data-clean-canvas="32"><rect x="-32" y="-32" width="1184" height="584" fill="#ffffff" data-canvas-background="true"></rect>
+<rect width="1120" height="520" fill="#ffffff"></rect>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#476b96"></path></marker></defs>
 <g font-family="sans-serif" fill="#173b63">
-<text x="30" y="36" font-size="22" font-weight="bold">내 PC의 Docker 실습 — 환경은 준비, 정규화 코드는 직접 작성</text>
-<g fill="white" stroke="#c3d4e8" stroke-width="2">
-<rect x="30" y="65" width="240" height="110" rx="12"/>
-<rect x="395" y="65" width="255" height="110" rx="12"/>
-<rect x="775" y="65" width="235" height="110" rx="12"/>
-<rect x="330" y="245" width="385" height="85" rx="12"/>
-<rect x="30" y="390" width="460" height="90" rx="12"/>
-<rect x="625" y="390" width="385" height="90" rx="12"/>
+<text x="60" y="48" font-size="24" font-weight="bold">내 PC — 준비된 Docker 환경에서 시작</text>
+<g fill="#f7faff" stroke="#c3d4e8" stroke-width="2">
+<rect x="60" y="85" width="270" height="110" rx="12"></rect>
+<rect x="425" y="85" width="270" height="110" rx="12"></rect>
+<rect x="790" y="85" width="270" height="110" rx="12"></rect>
+<rect x="425" y="290" width="635" height="95" rx="12"></rect>
+<rect x="60" y="290" width="270" height="165" rx="12"></rect>
 </g>
-<g font-size="21" font-weight="bold" text-anchor="middle">
-<text x="150" y="99">준비된 수집 도구</text>
-<text x="523" y="99">Nginx 게이트웨이</text>
-<text x="893" y="99">Flask 일반 앱</text>
-<text x="523" y="280">learning/data/case.json</text>
-<text x="260" y="425">직접 작성한 정규화·집계 함수</text>
-<text x="818" y="425">준비된 감시 화면 :8082</text>
+<g text-anchor="middle" font-size="22">
+<text x="195" y="126" font-weight="bold">브라우저</text><text x="195" y="163">localhost:8081</text>
+<text x="560" y="126" font-weight="bold">general-gateway</text><text x="560" y="163">Nginx — 요청 전달</text>
+<text x="925" y="126" font-weight="bold">general-api</text><text x="925" y="163">Flask — 게시판 처리</text>
+<text x="742" y="327" font-weight="bold">공유 폴더 classroom-logs</text><text x="560" y="365">nginx.log</text><text x="925" y="365">app.jsonl</text>
+<text x="195" y="328" font-weight="bold">감시 환경</text><text x="195" y="366">원본 읽기 → 정규화</text><text x="195" y="403">합치기 → 오류 집계</text><text x="195" y="438">화면 localhost:8082</text>
 </g>
-<g font-size="18" fill="#334b64" text-anchor="middle">
-<text x="150" y="132">목록 / · 없는 경로</text><text x="150" y="155">분석할 요청 2건 보내기</text>
-<text x="523" y="132">nginx.log · 접속 기록</text><text x="523" y="155">문자열 2행</text>
-<text x="893" y="132">app.jsonl · 앱 기록</text><text x="893" y="155">JSON 2행</text>
-<text x="523" y="310">수집기가 두 원본을 복사한 입력 묶음</text>
-<text x="260" y="456">앱 변환 + Nginx 변환 → 합치기 → 오류 집계</text>
-<text x="818" y="456">공통 표 · 출처 필터 · 원본 펼치기</text>
+<g fill="none" stroke="#476b96" stroke-width="3" marker-end="url(#arrow)">
+<path d="M330 140H413"></path><path d="M695 140H778"></path>
+<path d="M560 195V278"></path><path d="M925 195V278"></path><path d="M425 340H342"></path>
 </g>
-<g stroke="#476b96" stroke-width="3" fill="none" marker-end="url(#arrow)">
-<path d="M275 120H386"/><path d="M655 120H766"/>
-<path d="M523 180V235"/><path d="M893 180V287H725"/>
-<path d="M400 335V360H260V380"/><path d="M495 435H615"/>
-</g>
-<g font-size="16" fill="#334b64" text-anchor="middle">
-<text x="330" y="105">요청 보내기</text><text x="710" y="105">앱에 전달</text>
-<text x="596" y="214">원본 복사</text><text x="813" y="272">원본 복사</text>
-<text x="330" y="382">파일 읽기</text><text x="554" y="417">결과 전달</text>
-</g>
+<g font-size="19"><text x="344" y="122">요청</text><text x="708" y="122">전달</text><text x="576" y="246">파일 기록</text><text x="941" y="246">파일 기록</text><text x="342" y="319">읽기</text></g>
+<text x="425" y="445" font-size="20">원본 조회는 처음부터 준비되어 있다.</text>
+<text x="425" y="480" font-size="20">직접 만든 변환·집계 함수가 통합 표의 값을 만든다.</text>
 </g>
 </svg>

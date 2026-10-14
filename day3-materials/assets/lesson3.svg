@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="660" viewBox="0 0 1040 660"><rect width="1040" height="660" fill="#f4f7fb"/><g font-family="Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif"><text x="35" y="48" font-size="31" fill="#19384e" font-weight="bold">Nginx 원문의 자리를 찾아 같은 항목으로</text><text x="35" y="87" font-size="23" fill="#19384e" font-weight="normal">아래는 구조 설명용 일부다. 원문 전체는 raw에 그대로 남긴다.</text><rect x="30" y="112" width="980" height="160" rx="12" fill="white" stroke="#95afc3" stroke-width="2"/><text x="51" y="156" font-size="26" fill="#19384e" font-weight="normal">[14/Oct/2026:14:36:07 +0900]</text><text x="51" y="220" font-size="30" fill="#246c91" font-weight="bold">&quot;GET / HTTP/1.1&quot;   200  ...</text><path d="M205,284 V323 M700,284 V323" stroke="#246c91" stroke-width="4"/><rect x="30" y="335" width="980" height="236" rx="12" fill="white" stroke="#95afc3" stroke-width="2"/><text x="52" y="382" font-size="27" fill="#19384e" font-weight="bold">같은 공통 항목</text><text x="52" y="430" font-size="25" fill="#19384e" font-weight="normal">id: nginx-1   source: nginx</text><text x="52" y="477" font-size="25" fill="#19384e" font-weight="normal">method: GET   path: /   status_code: 200</text><text x="52" y="525" font-size="25" fill="#19384e" font-weight="normal">time: 원문 시각을 같은 기준으로 표현   raw: 원문 전체</text><text x="35" y="621" font-size="26" fill="#19384e" font-weight="normal">글자 &quot;200&quot; → 숫자 200  /  원본의 값과 의미를 유지한다.</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="304" viewBox="-32 -32 1104 304" data-clean-canvas="32"><rect x="-32" y="-32" width="1104" height="304" fill="#ffffff" data-canvas-background="true"></rect>
+<rect width="1040" height="240" rx="18" fill="#ffffff"></rect>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#476b96"></path></marker></defs>
+<rect x="40.0" y="35" width="285.3333333333333" height="170" rx="14" fill="white" stroke="#c3d4e8" stroke-width="2"></rect>
+<text x="182.66666666666666" y="78" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="bold" fill="#173b63">앱 원본</text>
+<text x="182.66666666666666" y="122" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">GET /training-missing</text>
+<text x="182.66666666666666" y="154" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">status_code: 404</text>
+<path d="M333.3333333333333 120H367.3333333333333" stroke="#476b96" stroke-width="3" marker-end="url(#arrow)"></path>
+<rect x="377.3333333333333" y="35" width="285.3333333333333" height="170" rx="14" fill="white" stroke="#c3d4e8" stroke-width="2"></rect>
+<text x="520.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="bold" fill="#173b63">normalize_app</text>
+<text x="520.0" y="122" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">원본 값을 옮김</text>
+<text x="520.0" y="154" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">source: app 추가</text>
+<path d="M670.6666666666666 120H704.6666666666666" stroke="#476b96" stroke-width="3" marker-end="url(#arrow)"></path>
+<rect x="714.6666666666666" y="35" width="285.3333333333333" height="170" rx="14" fill="white" stroke="#c3d4e8" stroke-width="2"></rect>
+<text x="857.3333333333333" y="78" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="bold" fill="#173b63">공통 기록</text>
+<text x="857.3333333333333" y="122" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">app / GET / 404</text>
+<text x="857.3333333333333" y="154" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">경로·원본은 유지</text>
+</svg>

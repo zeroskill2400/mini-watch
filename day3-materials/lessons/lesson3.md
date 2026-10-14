@@ -1,312 +1,186 @@
-Flask 기록은 공통 항목으로 바꾸었다. 그런데 같은 요청을 남긴 Nginx 기록은 긴 글 한 줄이라 그대로는 같은 이름으로 읽을 수 없다. 이번 목표는 Nginx 원문에서 요청·상태·시각을 꺼내 Flask와 같은 항목으로 돌려주는 것이다.
-원본 한 줄이 출처와 원문을 보존한 공통 기록 한 건으로 바뀐다. 원본에 실제로 있는 시각만 읽는다.
-<image src="../assets/lesson3.svg">설명용 변환도 — 요청·상태·시각의 자리를 찾아 공통 기록에 넣고 원문은 남긴다.</image>
-위쪽 원문에서 요청 부분과 그 뒤의 상태를 찾는다. 아래쪽은 같은 이름으로 바꾼 결과다. 세부 변환은 한 부분씩 실행하며 확인하자.
+앱과 Nginx의 원본이 한곳에 모였지만 모양은 아직 다르다. 먼저 앱 기록을 공통 항목으로 바꾸는 함수를 완성하자.
+이번 시간에 확인할 흐름이다.
+<image src="../assets/lesson3.svg">설명용 흐름도 — 왼쪽의 실제 입력을 가운데에서 처리해 오른쪽 결과로 확인한다.</image>
+- 실제 앱 로그를 변환하는 파일 하나를 완성한다.
+- 출처와 숫자 상태를 확인하고, 새로 연 경로가 실행 결과에 추가되는지 본다.
 ```plain text
 mini-watch-m5d3
-└─ monitor
-   └─ backend
-      └─ learning
-         ├─ classroom_data.py     준비된 파일 읽기 도구
-         ├─ lesson3.py            2단계에서 만들 실행 파일
-         ├─ normalize_nginx.py    4단계에서 완성할 변환 코드
-         └─ data
-            └─ case.json         같은 두 종류 원본
+└─ monitor/backend/learning/
+   ├─ log_data.py          준비된 원본 읽기
+   └─ normalize_app.py     이번에 완성
 ```
 <table_of_contents/>
-## 1단계. 같은 사례의 Nginx 원문 열기
-준비된 프로젝트와 서비스를 계속 사용한다. VS Code에서 `C:\work\mini-watch-m5d3`를 열고 터미널의 + 옆 화살표 → Command Prompt를 선택한다. 실제 폴더 이름이 다르면 아래 경로만 자기 위치로 바꾼다.
-프로젝트 폴더의 Windows CMD
-```plain text
-cd /d C:\work\mini-watch-m5d3
-```
-문자열은 글자들을 순서대로 담은 값이다. Nginx의 긴 한 줄도 문자열이므로, 항목 이름 대신 글자의 위치와 구분 표시로 값을 찾아야 한다.
-Nginx 원문 찾기
-1. 탐색기에서 `monitor` → `backend` → `learning` → `data` → `case.json`을 연다.
-2. `nginx`에 들어 있는 문자열 두 개를 찾는다. 첫 요청 부분은 GET·`/`, 둘째는 GET·`/training-missing`이다. 원문을 고치지 않는다.
-아래는 실제 수집한 한 줄 예시다. 주소·시각·응답 크기는 자기 원문과 다를 수 있다. `case.json`에서 보이는 `\"`는 문자열 안의 큰따옴표를 저장한 표기이며, 준비된 파일 읽기 함수 `read_case()`로 읽으면 실제 큰따옴표가 된다.
-실제 수집 예시 — 파일에 덮어쓰지 않는다
-```plain text
-127.0.0.1 - - [14/Oct/2026:14:36:07 +0900] "GET / HTTP/1.1" 200 476 "-" "python-requests/2.32.5"
-```
-대괄호 안은 Nginx가 남긴 시각이다. 첫 큰따옴표 쌍 안은 요청 방법·경로·HTTP 버전이고, 그 뒤 첫 값 200은 응답 상태다. 뒤의 크기와 다른 항목은 원본에 남기되 이번 공통 항목으로 옮기지는 않는다.
-<details>
-<summary>`case.json`이 없으면</summary>
-	같은 프로젝트 폴더의 CMD에서 제공된 수집 도구를 한 번 실행한다. 일반 서비스의 목록 경로와 없는 경로를 요청하고, Flask 기록 두 건과 Nginx 기록 두 줄을 같은 파일에 저장한다. 예시 원문을 대신 붙여 넣지 않는다.
-	프로젝트 폴더의 Windows CMD
-	```plain text
-docker compose -f compose-general.yaml exec -T general-api python collect_classroom.py
-	```
-	수집에 성공한 뒤 `learning` → `data` → `case.json`을 다시 연다. 오류가 나오면 다음 단계로 넘어가지 않고 CMD의 메시지를 확인한다. 준비 서비스가 꺼져 있다면 이 프로젝트의 `start-class.cmd`로 다시 시작한다. 기존 글·계정·DB를 지우지 않는다.
-</details>
-## 2단계. 큰따옴표를 기준으로 요청 부분 꺼내기
-Flask 기록처럼 항목 이름으로 바로 찾을 수 없으므로, 이 Nginx 형식에서 각 값의 자리를 먼저 나눈다. `split`은 지정한 글자를 경계로 문자열을 나누는 기능이다.
-문법을 읽는 작은 예 — 저장하지 않는다
-```python
-text = "왼쪽|가운데|오른쪽"
-print(text.split("|", 2))
-```
-```plain text
-['왼쪽', '가운데', '오른쪽']
-```
-두 번째 인수 2는 최대 두 번 나누라는 뜻이다. 두 번 나누면 세 부분이 생긴다. 실제 원문에서는 첫 큰따옴표 두 개만 경계로 삼아 요청 부분을 떼어 낸다. 뒤의 다른 큰따옴표까지 계속 쪼개지 않는다.
-첫 분리 프로그램 저장하기
-1. `monitor` → `backend` → `learning`에서 `lesson3.py`를 만들거나 연다.
-2. 아래 전체 코드를 넣고 Ctrl+S로 저장한다.
-`lesson3.py` — 한 줄을 나누는 전체 코드
-```python
-from learning.classroom_data import read_case
-
-case = read_case()
-number = 1
-line = case["nginx"][number - 1]
-prefix, request_text, suffix = line.split('"', 2)
-
-print("요청 부분", request_text)
-print("상태 글자", suffix.split()[0])
-```
-프로젝트 폴더의 Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
-```
-```plain text
-요청 부분 GET / HTTP/1.1
-상태 글자 200
-```
-`read_case`가 같은 파일을 읽고 `case["nginx"][number - 1]`이 첫 Nginx 원문을 고른다. `line.split('"', 2)`의 세 부분은 앞쪽 `prefix`, 따옴표 안의 `request_text`, 뒤쪽 `suffix`에 순서대로 들어간다.
-`suffix.split()`은 뒤쪽을 공백으로 나눈다. `[0]`은 그 첫 값인 상태를 꺼낸다. 출력에 200이 보여도 아직은 글자 `"200"`이다. 숫자 비교에 쓰려면 다음 단계에서 정수로 바꾼다.
-이제 입력만 바꿔 보자. `lesson3.py`의 다음 한 줄을 바꾸고 Ctrl+S로 저장한 뒤 같은 명령을 실행한다.
-바꿀 한 줄
-```python
-number = 2
-```
-프로젝트 폴더의 Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
-```
-```plain text
-요청 부분 GET /training-missing HTTP/1.1
-상태 글자 404
-```
-같은 분리 코드가 두 번째 요청의 경로와 상태를 꺼냈다. Nginx가 기록한 값을 읽은 것이지 코드가 응답을 404로 바꾼 것이 아니다. 다음 전체 파일로 교체하면 첫 기록으로 돌아간다.
-## 3단계. 상태는 숫자로, 시각은 같은 기준으로 맞추기
-요청 부분을 공백으로 나누면 방법·경로·버전 세 값이 나온다. 상태 문자열은 `int`로 정수로 바꾼다. 이렇게 해야 Flask의 숫자 200과 Nginx의 상태도 같은 방식으로 비교할 수 있다.
-시각도 표기가 다를 수 있다. UTC(Coordinated Universal Time)는 시각을 비교할 때 사용하는 공통 기준이다. 원문의 `+0900`은 UTC보다 9시간 앞선 표기이므로 14시 36분 07초는 같은 순간의 UTC 05시 36분 07초로 표현된다. 시각 자체를 새로 만드는 일이 아니다.
-`datetime`은 Python에 포함된 날짜·시각 처리 도구다. `datetime.strptime`는 지정한 모양대로 시각 글자를 읽고, `astimezone(timezone.utc)`는 같은 순간을 UTC로 표현한다. `isoformat()`은 그 값을 연-월-일과 시각이 포함된 문자열로 만든다.
+## 1단계. 변환할 항목 정하기
+정규화는 서로 다른 원본을 같은 항목과 값의 형식으로 맞추는 일이다. 예를 들어 앱의 상태 값과 Nginx 줄에서 꺼낸 상태를 모두 status\_code라는 정수로 두면 같은 조건으로 비교할 수 있다.
 <table header-row="true" fit-page-width="true">
 <tr>
-<td>원문 예시</td>
-<td>읽는 모양</td>
+<td>공통 항목</td>
+<td>앱에서 넣을 값</td>
+<td>필요한 이유</td>
 </tr>
 <tr>
-<td>`14/Oct/2026`</td>
-<td>`%d/%b/%Y`: 일·영문 월 이름·연도</td>
+<td>source</td>
+<td>app</td>
+<td>어느 프로그램의 기록인지 구분</td>
 </tr>
 <tr>
-<td>`14:36:07`</td>
-<td>`%H:%M:%S`: 시·분·초</td>
+<td>method</td>
+<td>원본 method</td>
+<td>GET·POST 구분</td>
 </tr>
 <tr>
-<td>`+0900`</td>
-<td>`%z`: UTC와의 차이</td>
+<td>path</td>
+<td>원본 path</td>
+<td>요청한 위치 확인</td>
+</tr>
+<tr>
+<td>status\_code</td>
+<td>원본 상태를 int로 변환</td>
+<td>숫자로 오류 조건 비교</td>
+</tr>
+<tr>
+<td>id / raw</td>
+<td>행 구분 이름 / 원본 객체</td>
+<td>화면 행 구분 / 원본 대조</td>
 </tr>
 </table>
-각 값이 만들어지는지 확인하기
-1. `lesson3.py`를 아래 전체 코드로 바꾸고 Ctrl+S로 저장한다.
-2. 실행한 뒤 요청 값과 원본·공통 시각을 나란히 읽는다.
-`lesson3.py` — 항목을 꺼내는 전체 코드
+id는 app-1처럼 이 목록의 행을 구분할 이름이다. 여러 장비의 기록이 같은 요청인지 증명하는 번호가 아니다. 원본에 없는 계정·시각은 만들어 넣지 않는다.
+한 행만 놓고 변환 전후를 먼저 비교하자. 아래는 입력과 결과의 미리보기이며 파일에 따로 저장하지 않는다.
+입력 원본 한 행
+```json
+{"method": "GET", "path": "/training-missing", "status_code": 404}
+```
+이 원본을 첫 행으로 변환한 결과
+```json
+{
+    "id": "app-1",
+    "source": "app",
+    "method": "GET",
+    "path": "/training-missing",
+    "status_code": 404,
+    "raw": {"method": "GET", "path": "/training-missing", "status_code": 404}
+}
+```
+경로와 404는 그대로다. 어느 출처인지, 원본이 무엇인지를 함께 담은 것이 변화다.
+## 2단계. 앱 변환 함수를 완성하기
+### 전체 파일을 바꾸고 실행하자
+다른 이름으로 clone했다면 아래 파일 열기와 모든 cd 명령의 mini-watch-m5d3를 실제 폴더명으로 바꾼다.
+분석 파일 바꾸기
+1. VS Code에서 `C:\work\mini-watch-m5d3` 폴더를 열고 `monitor/backend/learning/normalize_app.py`을 선택한다.
+2. 파일 내용을 아래 전체 코드로 바꾸고 Ctrl+S로 저장한다.
+`monitor/backend/learning/normalize_app.py` — 파일 전체
 ```python
-from datetime import datetime, timezone
-from learning.classroom_data import read_case
-
-case = read_case()
-line = case["nginx"][0]
-prefix, request_text, suffix = line.split('"', 2)
-method, path, protocol = request_text.split()
-status_code = int(suffix.split()[0])
-time_text = prefix.split("[", 1)[1].split("]", 1)[0]
-parsed_time = datetime.strptime(time_text, "%d/%b/%Y:%H:%M:%S %z")
-common_time = parsed_time.astimezone(timezone.utc).isoformat()
-
-print("요청", method, path, status_code)
-print("상태가 숫자인가", isinstance(status_code, int))
-print("원본 시각", time_text)
-print("공통 시각", common_time)
-```
-프로젝트 폴더의 Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
-```
-위 실제 수집 원문을 실행한 결과다. 시각은 자신의 원문 값에 따라 달라진다. 요청 방법·경로·상태와 숫자 여부는 그대로 비교할 수 있다.
-```plain text
-요청 GET / 200
-상태가 숫자인가 True
-원본 시각 14/Oct/2026:14:36:07 +0900
-공통 시각 2026-10-14T05:36:07+00:00
-```
-`request_text.split()`의 세 값을 `method`, `path`, `protocol`이 받는다. `int`가 상태를 숫자로 만든다. `prefix`에서 `[` 뒤를 고르고 다시 `]` 앞을 골라 시각 글자만 남긴다. 그 다음 두 줄이 시각 해석과 UTC 변환을 한다.
-`isinstance(status_code, int)`는 상태가 정수인지 검사한 결과다. True는 자료형 확인이며 정상 요청이나 공격 판정이 아니다. 원문의 시간대가 이미 `+0000`이면 시계 숫자는 그대로이고 표현 모양만 달라질 수 있다.
-HTTP 버전을 받는 `protocol`은 화면에 출력하지 않는데도 왜 필요할까? 요청을 나누는 한 줄만 아래처럼 두 변수로 바꿔 저장하고 실행해 보자. 의도된 오류 실험이다.
-오류 실험에서 교체할 한 줄
-```python
-method, path = request_text.split()
-```
-프로젝트 폴더의 Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
-```
-```plain text
-ValueError: too many values to unpack (expected 2)
-```
-요청 부분은 세 값인데 받는 이름을 두 개만 적어 오류가 난다. 아래 정상 줄로 복구하고 다시 실행한다. `protocol`을 공통 항목에 넣지 않더라도 세 번째 값을 받을 이름은 필요하다.
-복구할 한 줄
-```python
-method, path, protocol = request_text.split()
-```
-프로젝트 폴더의 Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
-```
-<details>
-<summary>분리나 시각 읽기 오류가 나면</summary>
-	큰따옴표·대괄호를 포함한 원문을 손으로 고치지 않았는지 확인한다. 이 코드는 제공 Nginx의 combined 접근 로그 형식을 읽는다. 다른 제품의 모든 로그 형식을 읽는 범용 파서는 아니다. 원문이 없거나 준비가 실패했다면 1단계의 제공 수집 명령으로 다시 준비한다.
-</details>
-## 4단계. 공통 기록을 돌려주는 함수 완성하기
-값을 꺼내는 처리를 확인했으니 Flask와 같은 항목을 반환하도록 묶자. 입력만 Nginx 문자열이고, 반환할 이름은 `id`, `source`, `time`, `method`, `path`, `status_code`, `raw`로 같다.
-정규화 함수 저장하기
-1. 같은 `learning` 폴더에 `normalize_nginx.py`를 만들거나 연다.
-2. 아래 전체 코드를 넣고 Ctrl+S로 저장한다. 날짜 처리 도구는 Python에 포함되어 있어 새 패키지를 설치하지 않는다.
-`normalize_nginx.py` — 파일 전체
-```python
-from datetime import datetime, timezone
-
-
-def normalize_nginx(line, number):
-    prefix, request_text, suffix = line.split('"', 2)
-    method, path, protocol = request_text.split()
-    time_text = prefix.split("[", 1)[1].split("]", 1)[0]
-    parsed_time = datetime.strptime(time_text, "%d/%b/%Y:%H:%M:%S %z")
+def normalize_app(event, number):
     return {
-        "id": f"nginx-{number}",
-        "source": "nginx",
-        "time": parsed_time.astimezone(timezone.utc).isoformat(),
-        "method": method,
-        "path": path,
-        "status_code": int(suffix.split()[0]),
-        "raw": line,
+        "id": f"app-{number}",
+        "source": "app",
+        "method": event["method"],
+        "path": event["path"],
+        "status_code": int(event["status_code"]),
+        "raw": event,
     }
-```
-함수 앞부분은 방금 실행한 분리·시각 해석 코드다. 반환 딕셔너리에서 출처는 `nginx`, 이름은 `nginx-1`처럼 이 파일 안의 순서로 붙인다. `raw`에는 원본 문자열을 그대로 넣어 어떤 글자를 해석했는지 다시 볼 수 있게 한다.
-같은 함수로 두 줄 처리하기
-1. `lesson3.py`를 아래 전체 코드로 바꿔 저장한다.
-2. 같은 폴더에 `normalize_nginx.py`와 준비된 `classroom_data.py`가 있는지 확인한 뒤 실행한다.
-`lesson3.py` — 이번 시간이 끝날 때 남길 전체 파일
-```python
-from learning.classroom_data import read_case
-from learning.normalize_nginx import normalize_nginx
 
-case = read_case()
-for number, line in enumerate(case["nginx"], start=1):
-    event = normalize_nginx(line, number)
-    print(event["id"], event["source"], event["method"],
-          event["path"], event["status_code"])
-    print("원본 보존", event["raw"] == line)
-    print("UTC 시각", event["time"])
+
+if __name__ == "__main__":
+    from learning.log_data import read_logs
+
+    logs = read_logs()
+    if not logs["app"]:
+        print("앱 원본이 없습니다. 일반 게시판에서 로그인하거나 목록을 열어 보세요.")
+    for number, raw in enumerate(logs["app"], start=1):
+        event = normalize_app(raw, number)
+        print(event["source"], event["method"], event["path"], event["status_code"])
 ```
+event는 원본 한 개, number는 그 원본의 순서다. 딕셔너리의 값을 읽어 새 딕셔너리로 돌려주되 raw에는 원본을 그대로 보관한다. int는 값을 정수로 바꾸는 Python 기본 함수다.
+파일 아래의 if \_\_name\_\_부터는 준비된 실행 확인부다. read\_logs로 현재 로그를 읽고 enumerate로 1부터 순서를 붙여 함수를 호출한다. 오늘 바꾸는 핵심은 위 normalize\_app의 반환값이다.
+VS Code의 터미널 → 새 터미널에서 + 옆 화살표 → Command Prompt를 선택하고 실행하자.
 프로젝트 폴더의 Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
+```bash
+cd /d C:\work\mini-watch-m5d3
+docker compose exec -T monitor-api python -m learning.normalize_app
 ```
-실제 수집 예시에서는 두 기록이 같은 초에 남아 아래처럼 나왔다. 내 출력은 자기 원문의 시각이며, 두 시각이 서로 달라도 그대로 유지한다.
 ```plain text
-nginx-1 nginx GET / 200
-원본 보존 True
-UTC 시각 2026-10-14T05:36:07+00:00
-nginx-2 nginx GET /training-missing 404
-원본 보존 True
-UTC 시각 2026-10-14T05:36:07+00:00
+app GET /training-missing 404
 ```
-`enumerate(..., start=1)`이 원문과 순서를 하나씩 주고, `normalize_nginx`가 한 건을 바꾼다. `event["raw"] == line`은 반환값에 같은 원문을 남겼는지 확인한다. `print` 세 개가 요청·원본 보존 여부·시각을 차례로 보여 준다.
-- Nginx 두 결과의 항목 이름이 Flask 결과와 같다.
-- `status_code`는 숫자이고 `raw`에는 원본 문자열이 남는다.
-- Nginx 시각은 원문에서 바꾸어 표현하고 Flask의 없는 시각은 여전히 `None`으로 둔다.
-## 챙겨 가기 — 읽는 방법은 달라도 결과 항목은 같게
-<table header-row="true" fit-page-width="true">
-<tr>
-<td>변환</td>
-<td>결과</td>
-</tr>
-<tr>
-<td>큰따옴표·공백으로 나누기</td>
-<td>원문의 요청 방법·경로·상태를 찾는다.</td>
-</tr>
-<tr>
-<td>`int`</td>
-<td>상태 글자를 비교 가능한 숫자로 바꾼다.</td>
-</tr>
-<tr>
-<td>원문 시각을 UTC로 표현</td>
-<td>다른 시간대 표기를 같은 기준으로 맞춘다.</td>
-</tr>
-<tr>
-<td>`source`와 `raw` 보존</td>
-<td>같은 형식 안에서도 출처와 원문을 확인한다.</td>
-</tr>
-</table>
-## 되새김 문제
-다음 질문에 말로 답할 수 있으면 이번 시간을 제대로 이해한 것이다.
-- 원문에서 요청 부분과 상태를 각각 어디서 꺼냈는가?
-- 시각 표현을 바꾸는 것과 없는 시각을 만드는 것은 어떻게 다른가?
-- 두 정규화 함수의 입력은 다른데 결과 항목은 왜 같아야 하는가?
+출력 예시 중 목표 경로에 해당하는 한 줄이다. 내 화면에는 로그인·스타일 요청 등 다른 행도 함께 나온다. 파일을 저장하면 연결된 컨테이너에서도 같은 코드를 읽으므로 이미지를 다시 빌드하지 않는다.
+### 원본과 결과를 대조하자
+변환 결과 읽기
+1. 감시 화면에서 원본 로그 불러오기를 누르고 앱 원본의 /training-missing을 찾는다.
+2. 터미널 결과의 같은 경로에서 GET과 404가 유지되고 앞에 app이 붙었는지 비교한다.
+정규화는 원래 오류를 정상으로 고치는 작업이 아니다. 404를 유지한 채 읽는 모양을 통일한다.
+## 3단계. 새 요청으로 변환을 다시 확인하기
+### 내가 정한 경로가 추가되는지 보자
+새 입력으로 다시 실행하기
+1. 일반 게시판 탭에서 [http://localhost:8081/app-check](http://localhost:8081/app-check)을 연다. 없는 주소이므로 404 화면이 나온다.
+2. 아래 명령을 다시 실행하고 app GET /app-check 404를 찾는다.
+프로젝트 폴더의 Windows CMD
+```bash
+cd /d C:\work\mini-watch-m5d3
+docker compose exec -T monitor-api python -m learning.normalize_app
+```
+새 경로가 나타나면 고정 예제만 변환한 것이 아니라 현재 로그를 다시 읽은 것이다. 아직 Nginx 변환과 통합 집계는 만들지 않았으므로 감시 화면의 통합 표는 완성 안내 상태로 남는다.
+<details>
+<summary>상태 항목 이름을 잘못 적으면</summary>
+	원본에는 status\_code가 있는데 event\["status"\]로 읽으면 다음 오류가 난다. 실행 파일에서는 올바른 status\_code를 유지한다.
+	의도된 오류 — 잘못된 키를 읽는 독립 예시
+	```python
+event = {"method": "GET", "path": "/app-check", "status_code": 404}
+print(event["status"])
+	```
+	```plain text
+KeyError: 'status'
+	```
+	KeyError는 딕셔너리에 그 이름의 항목이 없다는 뜻이다. 원본 키와 코드의 철자를 대조한다.
+</details>
 ## 확인문제
-**확인문제 1.** 이번 입력은 Flask 딕셔너리와 어떻게 다른가?
+**확인문제 1.** 정규화가 해결하는 문제는 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	Nginx가 남긴 문자열 한 줄이다. 이름으로 바로 값을 읽기보다 큰따옴표·공백·대괄호 위치를 이용해 항목을 꺼낸다.
+	원본마다 다른 항목 이름과 값의 형식을 공통 구조로 맞춰 같은 코드로 읽게 한다.
 </details>
-**확인문제 2.** `line.split('"', 2)`에서 2는 결과 두 개라는 뜻인가?
+**확인문제 2.** source에 app을 추가하는 이유는 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	아니다. 최대 두 번 나눈다는 뜻으로 앞부분·요청 부분·뒷부분 세 개가 생긴다.
+	변환 뒤에도 앱에서 온 기록임을 알기 위해서다. Nginx 기록과 구분한다.
 </details>
-**확인문제 3.** 첫 큰따옴표 안의 요청 부분에는 어떤 값이 있는가?
+**확인문제 3.** event\["path"\]는 무엇을 읽는가?
 <details>
 <summary>정답과 해설</summary>
-	요청 방법, 경로, HTTP 버전이다. `GET / HTTP/1.1`에서는 GET·/·HTTP/1.1 세 값이다.
+	현재 원본 객체에 들어 있는 요청 경로를 읽는다. 새 경로를 임의로 만들지 않는다.
 </details>
-**확인문제 4.** 큰따옴표 뒤에서 상태를 꺼내는 코드는 무엇인가?
+**확인문제 4.** int로 상태를 바꾸는 이유는 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	`suffix.split()[0]`이다. 뒤쪽을 공백으로 나눈 뒤 첫 값인 상태 문자열을 꺼낸다.
+	상태를 숫자로 통일해 400 이상인지 같은 숫자 조건으로 비교하기 위해서다.
 </details>
-**확인문제 5.** 화면에 200으로 보이는 상태를 왜 `int`로 바꾸는가?
+**확인문제 5.** raw에는 무엇을 보관하는가?
 <details>
 <summary>정답과 해설</summary>
-	원문에서 나눈 값은 문자열이기 때문이다. 숫자 상태를 가진 Flask 결과와 같은 조건으로 비교하려면 정수로 맞춘다.
+	변환 전 앱 객체를 보관한다. 결과가 이상하면 원본 값과 대조할 수 있다.
 </details>
-**확인문제 6.** 입력 번호를 2로 바꾸면 왜 없는 경로가 나오는가?
+**확인문제 6.** app-1은 동일 요청을 두 서버에서 연결하는 식별자인가?
 <details>
 <summary>정답과 해설</summary>
-	같은 파일의 두 번째 Nginx 원문이 그 요청을 기록했기 때문이다. 변환 코드가 새 요청이나 오류를 만든 것이 아니다.
+	아니다. 이 목록에서 앱 원본 첫 행을 구분하는 이름이다. 요청의 동일성을 증명하지 않는다.
 </details>
-**확인문제 7.** 원문 14시 36분 07초 +0900을 UTC 05시 36분 07초로 바꾸면 사건 시각이 달라지는가?
+**확인문제 7.** 파일을 저장한 뒤 확인 명령은 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	아니다. 같은 순간을 다른 시간대 기준으로 표현한다. 원문의 시간대 차이를 함께 읽기 때문에 가능한 변환이다.
+	프로젝트 CMD에서 docker compose exec -T monitor-api python -m learning.normalize\_app을 실행한다.
 </details>
-**확인문제 8.** Nginx에 시각이 있으니 Flask의 `time`도 그 값으로 채워도 되는가?
+**확인문제 8.** /app-check를 연 뒤 이전 실행 결과가 저절로 바뀌는가?
 <details>
 <summary>정답과 해설</summary>
-	안 된다. Flask 원본에는 시각이 없으므로 `None`을 유지한다. 출처가 다른 값을 확인 없이 원본 사실로 채우지 않는다.
+	아니다. 명령을 다시 실행해야 현재 파일을 읽은 새 결과가 출력된다.
 </details>
-**확인문제 9.** `raw`에 원문 전체를 남기는 이유는 무엇인가?
+**확인문제 9.** 404가 정규화 뒤 200으로 바뀌어야 하는가?
 <details>
 <summary>정답과 해설</summary>
-	공통 항목이 어떤 원문에서 나왔는지 확인하고, 변환하지 않은 항목도 다시 살펴보기 위해서다.
+	아니다. 원본 404를 유지한다. 정규화는 응답 결과를 바꾸는 작업이 아니다.
 </details>
-**확인문제 10.** 두 결과의 공통 항목이 같아지면 다음에 무엇을 할 수 있는가?
+**확인문제 10.** KeyError: status가 나오면 무엇을 비교하는가?
 <details>
 <summary>정답과 해설</summary>
-	한 목록으로 모아 같은 열과 조건으로 읽을 수 있다. 출처와 원문은 유지하며, 행을 합친 것만으로 같은 요청임을 증명하거나 중복 제거한 것은 아니다.
+	원본 키와 코드의 키를 비교한다. 이 원본의 정확한 이름은 status\_code이다.
 </details>
-입력이 객체이든 문자열이든 같은 항목의 기록을 반환하게 만들었다. 다음에는 두 함수의 결과를 한 목록에 모아 함께 읽어 보자.
+앱 원본은 공통 항목으로 읽을 수 있다. 다음에는 항목 이름 없이 한 줄로 적힌 Nginx 기록에서 같은 값을 꺼낸다.
