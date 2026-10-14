@@ -6,7 +6,7 @@ import AnalysisClient from "./AnalysisClient";
 
 export default function MonitorClient() {
   const [user, setUser] = useState(null);
-  const [username, setUsername] = useState("operator");
+  const [username, setUsername] = useState("class-operator");
   const [password, setPassword] = useState("");
   const [events, setEvents] = useState([]);
   const [message, setMessage] = useState("");

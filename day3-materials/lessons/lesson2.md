@@ -1,228 +1,292 @@
-기록의 출처는 그 기록을 남긴 곳이다. 정규화는 서로 다른 필드 이름을 공통 이름으로 맞추는 일이며, 없던 사실을 채우는 일이 아니다. 
-
-이번에는 실제 HTTP의 역할을 떠올리며 명시된 교육용 HTTP·오류·감사 자료를 비교하자.
-공통 기록을 읽되 출처·시각·원본의 의미를 보존한다.
-발생 시각은 원래 행동이나 오류가 일어난 때이고, 수신 시각은 감시 서비스가 자료를 받은 때이다.
-<image src="../assets/lesson2.svg">설명용 그림. 공통 기록을 읽되 출처·시각·원본의 의미를 보존한다.</image>
-그림의 입력 자료에서 비교 기준을 거쳐 확인할 결과로 읽어 보자.
-- 수신 시각과 발생 시각을 구분한다.
-- Sentry 오류와 계정 감사 자료를 구분한다.
-- 수집·조사·대응에서 현재 기능의 역할을 설명한다.
-<table_of_contents/>
-## 1단계. 같은 사건처럼 보이는 기록을 구분하기
-첫 그림의 세 자료는 교육용으로 만든 예제다. HTTP 예제는 요청의 방법·경로·상태, Sentry 예제는 앱 오류, 감사 예제는 계정의 행동을 기록한다.
-Sentry는 앱 오류를 모아 확인하는 도구다. 오류 500을 보았다는 사실은 계정 침해를 확인했다는 뜻이 아니다.
-<table header-row="true" fit-page-width="true">
-<tr>
-<td>자료</td>
-<td>이 예제가 알려 주는 것</td>
-<td>이것만으로 모르는 것</td>
-</tr>
-<tr>
-<td>HTTP h1</td>
-<td>요청 한 건이 500으로 끝남</td>
-<td>예외의 내부 원인</td>
-</tr>
-<tr>
-<td>Sentry s1</td>
-<td>ZeroDivisionError 발생</td>
-<td>계정이 탈취됐는지</td>
-</tr>
-<tr>
-<td>감사 a1</td>
-<td>예제 계정의 로그인 실패</td>
-<td>반복 행동이나 이후 성공 여부</td>
-</tr>
-</table>
-먼저 예상하기
-1. h1과 s1에서 같은 요청인지 확인할 값을 찾는다.
-2. a1을 h1과 같은 사건으로 바로 묶을 수 있는지 판단한다.
-<details>
-<summary>판단과 해설</summary>
-	h1과 s1의 demo-r42는 교육용으로 맞춰 둔 요청 식별자다. 실제 HTTP 시작 코드에는 이 필드가 저장되지 않으므로 실제 Sentry 이슈와 한 요청으로 확정할 수 없다.
-	a1에는 같은 요청 식별자가 없고 자료의 의미도 다르다. 시각이 비슷하다는 사실만으로 같은 사건이라고 연결하지 않는다.
-</details>
-## 2단계. 시각과 사용자 이름의 뜻을 남기기
-발생 시각은 원래 행동이나 오류가 일어난 때이고, 수신 시각은 감시 서비스가 자료를 받은 때이다. 전송이 늦거나 실패하면 두 시각은 같지 않을 수 있다.
-현재 실제 HTTP의 occurred\_at은 감시 DB가 기록을 저장한 수신 시각이다. 교육용 감사 JSON의 at은 예제 행동의 발생 시각이므로 같은 필드 이름으로 맞춰도 뜻을 표시한다.
+같은 요청을 남겨도 Flask는 JSON으로, Nginx는 긴 글 한 줄로 기록한다. 이대로는 같은 항목을 읽는 방법이 서로 다르다. 이번 목표는 Flask 기록 한 건을 공통 항목으로 바꾸고, 원본에 없는 시각은 비워 두는 것이다.
+성공 요청과 없는 경로 요청을 같은 항목으로 읽는다. 시각의 `None`은 원본에 값이 없다는 표시다.
+<image src="../assets/lesson2.svg">설명용 변환도 — Flask 원본 세 값을 옮기고 출처·분석용 이름을 붙이되 없는 시각은 만들지 않는다.</image>
+왼쪽은 실제 앱 원본의 모양, 오른쪽은 이번에 만들 공통 기록이다. 원본의 세 값과 새로 붙인 표식을 구분해 읽고 아래 첫 단계에서 자기 파일을 연다.
 ```plain text
-HTTP 실제 기록: source=http_live / 시각 의미=감시DB 수신
-감사 교육 자료: source=audit_demo / 시각 의미=예제 발생
+mini-watch-m5d3
+└─ monitor
+   └─ backend
+      └─ learning
+         ├─ classroom_data.py   준비된 파일 읽기 도구
+         ├─ lesson2.py          2단계에서 만들 실행 파일
+         ├─ normalize_app.py    4단계에서 완성할 변환 코드
+         └─ data
+            └─ case.json       실제 수집한 두 종류 기록
 ```
-같은 사용자를 연결하려면 이름이 비슷한지가 아니라 확인된 대응 관계가 필요하다. 준비된 `actor-map.json`은 교육용 user-17과 mira@example.test가 employee-17이라는 관계를 명시한다.
+<table_of_contents/>
+## 1단계. 같은 사례의 Flask 원본 열기
+1교시에서 준비한 프로젝트와 실행 중인 서비스를 그대로 쓴다. VS Code에서 `C:\work\mini-watch-m5d3`를 열고, 터미널의 + 옆 화살표 → Command Prompt로 CMD를 선택한다. 다른 이름의 폴더를 사용했다면 아래 경로만 자기 폴더로 바꾼다.
+프로젝트 폴더의 Windows CMD
+```plain text
+cd /d C:\work\mini-watch-m5d3
+```
+같은 원본을 열어 보자
+1. 탐색기에서 `monitor` → `backend` → `learning` → `data` → `case.json`을 연다.
+2. `app` 안에 있는 기록 두 건을 찾는다. 첫 기록은 GET·`/`·200, 둘째는 GET·`/training-missing`·404이다. 원본을 수정하지 않는다.
+`case.json`의 `app`에는 Flask가 만든 JSON 기록이, `nginx`에는 Nginx가 만든 한 줄짜리 접근 기록이 있다. 두 입력은 같은 두 요청을 각기 다른 곳에서 남긴 자료다. 이번 시간에는 `app`만 읽고 다음 시간에 `nginx`를 읽는다.
+첫 Flask 기록의 모양 — 읽기용
+```json
+{"method": "GET", "path": "/", "status_code": 200}
+```
+`method`는 요청 방법, `path`는 경로, `status_code`는 응답 상태다. 이 Flask 원본에는 시각과 ID가 없다. DB 조회 결과에 붙었던 값이나 지금 시각을 여기의 원본 값처럼 끼워 넣지 않는다.
+<details>
+<summary>`case.json`이 없으면</summary>
+	같은 프로젝트 폴더의 CMD에서 제공된 수집 도구를 한 번 실행한다. 일반 서비스의 목록 경로와 없는 경로를 요청하고, Flask 기록 두 건과 Nginx 기록 두 줄을 같은 파일에 저장한다. 예시 원문을 대신 붙여 넣지 않는다.
+	프로젝트 폴더의 Windows CMD
+	```plain text
+docker compose -f compose-general.yaml exec -T general-api python collect_classroom.py
+	```
+	수집에 성공한 뒤 `learning` → `data` → `case.json`을 다시 연다. 오류가 나오면 다음 단계로 넘어가지 않고 CMD의 메시지를 확인한다. 준비 서비스가 꺼져 있다면 이 프로젝트의 `start-class.cmd`로 다시 시작한다. 기존 글·계정·DB를 지우지 않는다.
+</details>
+## 2단계. 공통 항목으로 한 건 바꾸기
+지금 Flask 기록은 이름으로 값을 읽을 수 있지만 Nginx 기록은 긴 문자열이다. 나중에 같은 화면과 분석 코드로 읽으려면 두 입력을 같은 항목 이름으로 맞춰야 한다. 정규화는 서로 다른 표현을 공통 형식으로 맞추되 원본의 뜻을 유지하는 일이다.
 <table header-row="true" fit-page-width="true">
 <tr>
-<td>원본 이름</td>
-<td>공통 사용자</td>
-<td>근거</td>
+<td>공통 항목</td>
+<td>이 Flask 기록에서 넣을 값</td>
+<td>값이 온 곳</td>
 </tr>
 <tr>
-<td>user-17</td>
-<td>employee-17</td>
-<td>교육용 대응표</td>
+<td>`id`</td>
+<td>`app-1`</td>
+<td>이번 파일의 첫 앱 기록에 붙이는 분석용 이름</td>
 </tr>
 <tr>
-<td>mira@example.test</td>
-<td>employee-17</td>
-<td>같은 대응표</td>
+<td>`source`</td>
+<td>`app`</td>
+<td>어느 입력에서 왔는지 붙이는 출처 표식</td>
 </tr>
 <tr>
-<td>unknown-user</td>
-<td>없음</td>
-<td>대응 관계 미확인</td>
+<td>`time`</td>
+<td>`None`</td>
+<td>원본에 시각이 없다는 표시</td>
+</tr>
+<tr>
+<td>`method`·`path`·`status_code`</td>
+<td>`GET`·`/`·200</td>
+<td>원본에서 읽은 값</td>
+</tr>
+<tr>
+<td>`raw`</td>
+<td>원본 한 건</td>
+<td>변환 전 내용을 그대로 보관</td>
 </tr>
 </table>
-사용자 연결 판단하기
-1. user-17과 mira@example.test의 대응표를 확인한다.
-2. unknown-user를 IP가 같다는 이유로 employee-17이라고 채워도 되는지 판단한다.
-<details>
-<summary>판단과 해설</summary>
-	앞의 두 이름은 준비된 대응표에 근거가 있다. unknown-user는 근거가 없으므로 연결할 사용자가 없다는 값으로 남긴다.
-</details>
-## 3단계. 준비된 코드로 정규화 결과 확인하기
-파일 읽기와 대응표 적용은 준비 코드다. 이번에는 날짜 파서나 DB 연결을 새로 작성하지 않고 변환 전후의 의미를 확인한다.
-입력 JSON과 사용자 대응표는 monitor/backend/learning/data 폴더에 있다. 이 폴더의 `http-example.json`·`sentry-example.json`·`audit-raw.json`·`actor-map.json`을 비교한다.
-VS Code에서 monitor/backend/learning/lesson2.py를 열어 입력과 출력 부분을 읽는다. 실행은 앞에서 동작시킨 같은 저장소의 Windows CMD 터미널에서 한다.
-`monitor/backend/learning/lesson2.py` — 준비된 실행 파일
+`None`은 값이 없다는 Python 표현이다. 0초라는 측정값도 아니고 현재 시각도 아니다. `app-1`은 원본에 있던 DB 번호가 아니라 이번 수집 파일의 첫 앱 기록을 찾는 이름이며, 다음에 다시 수집한 파일의 `app-1`과 같은 사건이라고 볼 수 없다.
+딕셔너리는 이름과 값을 짝지어 담는 자료다. `{ "path": "/" }`에서 `path`라는 이름으로 `/`를 읽듯, 아래 코드도 원본에서 값을 꺼내 새 딕셔너리에 넣는다.
+함수는 입력을 받아 정해진 처리를 하고 결과를 돌려주는 코드 묶음이다. 파일 읽기는 준비된 `read_case` 함수를 사용한다. 지금은 변환을 작은 프로그램으로 실행하고, 마지막 단계에서 그 변환에도 함수 이름을 붙인다.
+작은 변환 프로그램을 저장하자
+1. `monitor` → `backend` → `learning`에 `lesson2.py`를 만들거나 기존 파일을 연다.
+2. 아래 전체 코드를 넣고 Ctrl+S로 저장한다. `data` 폴더 안이 아니라 `learning` 바로 아래에 둔다.
+`lesson2.py` — 한 건을 바꾸는 전체 코드
 ```python
-from learning.support import read_json, normalize_audit
-raw = read_json("audit-raw.json")[0]
-event = normalize_audit(raw)
-print(raw["person"], "->", event["actor"])
-print("원본ID", raw["id"], "공통ID", event["id"])
-print(event["source"], event["kind"], event["occurred_at"])
-http = read_json("http-example.json")
-sentry = read_json("sentry-example.json")
-print(http["request_id"], sentry["request_id"])
-print(http["status_code"], sentry["exception"])
+from learning.classroom_data import read_case
 
+case = read_case()
+number = 1
+raw = case["app"][number - 1]
+
+event = {
+    "id": f"app-{number}",
+    "source": "app",
+    "time": None,
+    "method": raw["method"],
+    "path": raw["path"],
+    "status_code": int(raw["status_code"]),
+    "raw": raw,
+}
+
+print("ID와 출처", event["id"], event["source"])
+print("요청", event["method"], event["path"], event["status_code"])
+print("시각", event["time"])
+print("원본", event["raw"])
 ```
-Windows CMD
+첫 줄은 준비된 파일 읽기 함수 `read_case`를 가져온다. `case = read_case()`가 `case.json`을 읽는다. `case["app"]`은 앱 기록 목록이고, 위치는 0부터 세므로 `number - 1`이 첫 위치 0을 고른다.
+`event = { ... }`가 새 공통 기록을 만든다. `f"app-{number}"`는 번호를 이름 뒤에 붙이고 `source`는 앱 출처를 표시한다. 세 요청 값은 `raw`에서 읽으며 `int`는 상태를 숫자로 맞춘다. `"raw": raw`는 나중에 되짚을 원본을 남긴다.
+마지막 네 `print`는 새 이름과 출처, 요청 값, 비어 있는 시각, 보관한 원본을 각각 출력한다. 파일을 저장한 뒤 아래 명령으로 실행하자.
+프로젝트 폴더의 Windows CMD
 ```plain text
 docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson2
 ```
 ```plain text
-user-17 -> employee-17
-원본ID a1 공통ID a1
-audit_demo login_failure 2026-10-14T00:00:00Z
-demo-r42 demo-r42
-500 ZeroDivisionError
+ID와 출처 app-1 app
+요청 GET / 200
+시각 None
+원본 {'method': 'GET', 'path': '/', 'status_code': 200}
 ```
-python -m learning.lesson2는 learning 폴더의 해당 실습을 실행한다. 코드는 감시 API 컨테이너에서 실행되므로 호스트 PC에 새 Python 패키지를 설치하지 않는다.
-결과에서 근거 찾기
-1. 출력의 원본 ID와 공통ID가 같은 a1인지, 출처가 audit\_demo인지 확인한다.
-2. 출력의 500과 ZeroDivisionError가 서로 무엇을 설명하는지 말한다.
+원본의 세 요청 값은 그대로이고 출처·분석용 이름·빈 시각 칸이 추가됐다. 원본 출력의 작은따옴표는 Python의 표시 방식이다. JSON 파일의 큰따옴표를 고쳐야 한다는 뜻이 아니다.
+키 이름을 틀리면 어떻게 될까? 원본은 그대로 두고 `lesson2.py`의 상태를 읽는 줄만 아래처럼 바꿔 저장하고 실행한다. 아래는 의도된 오류를 만들기 위해 교체할 한 줄이다.
+의도된 오류 — 기존 상태 읽기 한 줄과 교체
+```plain text
+    "status_code": int(raw["status"]),
+```
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson2
+```
+```plain text
+KeyError: 'status'
+```
+오류의 마지막 줄이다. 원본에는 `status`라는 키가 없어서 그 이름으로 값을 읽을 수 없다. 왼쪽의 공통 항목 이름이 아니라 오른쪽 원본 키를 `status_code`로 고쳐야 한다. 아래 정상 줄로 복구하고 다시 실행해 앞의 네 출력 줄이 나오는지 확인한다.
+복구할 한 줄
+```plain text
+    "status_code": int(raw["status_code"]),
+```
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson2
+```
 <details>
-<summary>해설</summary>
-	500은 HTTP 처리 결과이고 ZeroDivisionError는 예제 오류 종류다. 공통 필드로 옮겨도 원본과 출처를 남겨야 뒤에서 판정 근거를 다시 확인할 수 있다.
+<summary>실행이 안 되면</summary>
+	`No module named learning.lesson2`이면 저장 위치와 파일 이름을 확인하고 Ctrl+S를 누른다. `read_case`를 가져올 수 없으면 준비된 `classroom_data.py`가 같은 `learning` 폴더에 있는지 본다. 새 패키지를 설치하지 않는다. 파일이 없다는 안내가 나오면 1단계 수집 명령으로 준비한다.
 </details>
-## 4단계. SIEM·XDR·SOAR의 역할 연결하기
-SIEM(Security Information and Event Management)은 보안 기록을 모아 조회하고 분석하는 역할을 가진 시스템이다. 우리의 기록 수집·저장·조회와 규칙 적용을 이 역할에 대응시켜 볼 수 있다.
-XDR(Extended Detection and Response)은 기기·계정·클라우드 등 여러 영역의 탐지 정보를 연결해 조사와 대응을 돕는 범주이다. 자료를 한 표에 올렸다는 사실만으로 우리 예제가 완전한 XDR 제품이 되는 것은 아니다.
-SOAR(Security Orchestration, Automation and Response)은 여러 도구의 대응 절차를 연결하고 반복 작업을 자동화하는 범주이다. 지금의 근거 확인과 뒤에서 다룰 사건·사람 승인·조치·복구를 구분해 생각하자.
+## 3단계. 같은 변환에 다른 원본 넣기
+다른 기록도 같은 모양으로 바뀌는지 보자. 원본 파일은 그대로 두고 `lesson2.py`에서 다음 한 줄만 바꾼 뒤 저장한다.
+바꿀 한 줄
+```python
+number = 2
+```
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson2
+```
+```plain text
+ID와 출처 app-2 app
+요청 GET /training-missing 404
+시각 None
+원본 {'method': 'GET', 'path': '/training-missing', 'status_code': 404}
+```
+번호 2가 두 번째 원본을 고르고 이름도 `app-2`로 바꿨다. 경로와 상태는 그 원본에서 읽었기 때문에 달라졌다. 시각은 두 원본 모두 없으므로 여전히 `None`이다. 정규화가 404를 성공으로 고치거나 기록을 지우지는 않는다.
+완료 확인: 첫 결과와 둘째 결과의 항목 이름은 같고 요청 값만 다르다. `raw`에는 각각 바꾸기 전 기록이 남아 있어야 한다. 다음 단계에서는 파일 전체를 교체하므로 번호를 따로 복구할 필요는 없다.
+## 4단계. 변환 함수를 만들어 두 건에 적용하기
+같은 변환을 계속 복사하지 않으려면 이름을 붙여 재사용하면 된다. 함수는 입력을 받아 정해진 처리를 하고 결과를 돌려주는 코드 묶음이다. 이번 함수는 원본 한 건과 번호를 받아 공통 기록 한 건을 돌려준다.
+함수의 모양 — 읽기용
+```plain text
+def 함수이름(입력):
+    return 결과
+```
+`def`는 함수를 정의하고 `return`은 결과를 호출한 곳에 돌려준다. 이 단계에서는 앞에서 실행한 딕셔너리 만들기를 함수 안으로 옮긴다.
+함수 파일 저장하기
+1. 같은 `learning` 폴더의 `normalize_app.py`를 연다. 파일이 없을 때만 같은 이름으로 새로 만든다.
+2. 기존 내용을 아래 전체 코드로 바꾸고 저장한다. 함수 파일은 저장만으로 결과를 출력하지 않는다.
+`normalize_app.py` — 파일 전체
+```python
+def normalize_app(event, number):
+    return {
+        "id": f"app-{number}",
+        "source": "app",
+        "time": None,
+        "method": event["method"],
+        "path": event["path"],
+        "status_code": int(event["status_code"]),
+        "raw": event,
+    }
+```
+`event`에는 원본 한 건, `number`에는 이번 파일 안의 순서가 들어온다. 딕셔너리의 각 항목은 앞에서 확인한 처리와 같다. `return`이 완성한 한 건을 호출한 쪽으로 넘긴다.
+두 건을 처리하는 실행 파일 저장하기
+1. `lesson2.py`의 전체 내용을 아래 코드로 바꿔 Ctrl+S로 저장한다.
+2. `normalize_app.py`와 `classroom_data.py`가 같은 폴더에 있는지 확인하고 명령을 실행한다.
+`lesson2.py` — 이번 시간이 끝날 때 남길 전체 파일
+```python
+from learning.classroom_data import read_case
+from learning.normalize_app import normalize_app
+
+case = read_case()
+for number, raw in enumerate(case["app"], start=1):
+    event = normalize_app(raw, number)
+    print(event["id"], event["source"], event["method"],
+          event["path"], event["status_code"], event["time"])
+```
+두 `import`는 파일 읽기와 방금 작성한 변환 함수를 가져온다. `enumerate(..., start=1)`은 기록을 하나씩 꺼내면서 1부터 번호를 붙인다. 반복할 때마다 `normalize_app(raw, number)`가 한 건을 바꾸고 `print`가 그 반환값을 보여 준다.
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson2
+```
+```plain text
+app-1 app GET / 200 None
+app-2 app GET /training-missing 404 None
+```
+출력 두 줄은 공통 항목의 순서를 같게 해 읽은 결과다. 시각을 만들어 넣지 않았고 없는 경로 기록도 남았다. 다음 시간에는 Nginx 문자열을 같은 항목으로 바꾼다.
+- 두 기록의 출처는 `app`이고 분석용 이름은 `app-1`, `app-2`다.
+- 원본의 경로·상태가 유지되고 시각은 두 건 모두 `None`이다.
+- `normalize_app`이 값을 바꾸는 곳과 `lesson2.py`가 호출·출력하는 곳을 구분한다.
+## 챙겨 가기 — 읽은 값과 붙인 표식 구분하기
 <table header-row="true" fit-page-width="true">
 <tr>
-<td>역할</td>
-<td>현재 배우는 부분</td>
-<td>아직 더 필요한 부분</td>
+<td>항목</td>
+<td>기억할 점</td>
 </tr>
 <tr>
-<td>SIEM</td>
-<td>출처를 남겨 수집·정규화·규칙 적용</td>
-<td>더 많은 수집원·운영 기능</td>
+<td>요청 방법·경로·상태</td>
+<td>실제 원본에서 읽는다.</td>
 </tr>
 <tr>
-<td>XDR</td>
-<td>여러 종류 근거의 관계를 설명</td>
-<td>영역 간 확인된 식별자와 실제 연동</td>
+<td>분석용 이름·출처</td>
+<td>파일 안에서 원본을 찾기 위해 붙인다.</td>
 </tr>
 <tr>
-<td>SOAR</td>
-<td>판단 근거를 다음 대응 입력으로 준비</td>
-<td>사건·승인·실제 조치·복구</td>
+<td>시각</td>
+<td>원본에 없으면 `None`으로 남긴다.</td>
+</tr>
+<tr>
+<td>원본 `raw`</td>
+<td>변환 결과를 되짚을 때 사용한다.</td>
 </tr>
 </table>
-우리 기능의 위치 말하기
-1. 기록 불러오기와 근거 표시가 어느 역할에 가까운지 설명한다.
-2. 아직 승인·조치하지 않은 결과를 대응 완료라고 불러도 되는지 판단한다.
-<details>
-<summary>해설</summary>
-	수집·조회·분석은 SIEM 역할에 가깝다. 실제 조치가 없는 현재 결과는 대응 완료가 아니며 후보의 근거를 읽는 단계다.
-</details>
-## 챙겨 가기 — 기록을 합치기 전에 확인하기
-<table header-row="true" fit-page-width="true">
-<tr>
-<td>가져갈 개념</td>
-<td>판단할 때 할 일</td>
-</tr>
-<tr>
-<td>출처</td>
-<td>실제 기록과 교육용 자료를 구분한다.</td>
-</tr>
-<tr>
-<td>정규화</td>
-<td>이름을 맞추되 시각·식별자·없는 값을 보존한다.</td>
-</tr>
-<tr>
-<td>도구 역할</td>
-<td>수집·조사·대응을 나눠 현재 기능의 범위를 설명한다.</td>
-</tr>
-</table>
-다음에는 이 공통 기록에서 같은 조건으로 조회 횟수를 비교한다. 사용자 정보가 없는 실제 HTTP에는 사용자별 침해 규칙을 억지로 적용하지 않는다.
-## 확인문제
-**확인문제 1.** 정규화할 때 필드 이름이 같아지면 뜻도 같아졌는가?
-<details>
-<summary>정답과 해설</summary>
-	아니다. 수신 시각과 발생 시각처럼 이름을 맞춰도 원래 뜻과 출처를 표시해야 한다.
-</details>
-**확인문제 2.** 실제 HTTP의 occurred\_at은 지금 무엇을 뜻하는가?
-<details>
-<summary>정답과 해설</summary>
-	감시 DB에 저장한 수신 시각이다. 일반 앱에서 행동이 발생한 시각을 직접 받은 필드가 아니다.
-</details>
-**확인문제 3.** 현재 HTTP에 없는 사용자와 IP를 추측해 채워도 되는가?
-<details>
-<summary>정답과 해설</summary>
-	안 된다. 확인하지 못한 값은 없는 상태로 남겨야 잘못된 사용자 연결을 피한다.
-</details>
-**확인문제 4.** Sentry 오류500 자료만으로 계정 침해를 확정할 수 있는가?
-<details>
-<summary>정답과 해설</summary>
-	없다. 오류 관찰과 계정 행동 감사는 의미가 다르며 침해 판단에 다른 근거가 필요하다.
-</details>
-**확인문제 5.** 교육용 h1과 s1을 같은 요청으로 비교할 근거는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	두 예제에 맞춰 둔 demo-r42 요청 식별자다. 시각만 비슷해서 연결한 것이 아니다.
-</details>
-**확인문제 6.** 교육용 연결 예제가 현재 실제 HTTP와 Sentry의 연결 성공을 증명하는가?
-<details>
-<summary>정답과 해설</summary>
-	아니다. 실제 시작 코드에는 요청 식별자가 저장되지 않는다. 제공 예제와 실제 연동을 구분한다.
-</details>
-**확인문제 7.** user-17과 mira@example.test가 같은 사용자인 이유는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	준비된 교육용 대응표에서 둘을 employee-17로 확인해 두었기 때문이다. 이름이나 IP를 추측한 것이 아니다.
-</details>
-**확인문제 8.** unknown-user의 IP가 같으면 employee-17로 정규화하는가?
-<details>
-<summary>정답과 해설</summary>
-	아니다. 대응 관계를 확인하지 못했으므로 공통 사용자 값이 없는 상태로 남긴다.
-</details>
-**확인문제 9.** 기록 수집·조회·규칙 적용은 어떤 역할에 가까운가?
-<details>
-<summary>정답과 해설</summary>
-	SIEM의 수집·분석 역할에 가깝다. 예제가 상용 제품의 모든 기능을 구현했다는 뜻은 아니다.
-</details>
-**확인문제 10.** 현재 후보 표시가 SOAR 대응 완료와 다른 이유는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	아직 사건 검토·승인·실제 조치·복구 절차를 수행하지 않았다. 분석 결과가 그 다음 절차의 입력이 되는 것이다.
-</details>
 ## 되새김 문제
 다음 질문에 말로 답할 수 있으면 이번 시간을 제대로 이해한 것이다.
-- 수신 시각과 발생 시각을 같은 뜻으로 비교하면 어떤 문제가 생기는가?
-- Sentry 오류와 계정 감사 기록은 어떤 사실을 각각 알려 주는가?
-- 우리 기능은 수집·조사·대응 중 어디까지 동작하고 있는가?
-다음 활동에서도 출처와 비교 기준을 확인하며 근거를 읽어 보자.
+- 정규화 전후에 그대로 남은 값과 새로 붙인 표식은 무엇인가?
+- Flask 기록의 시각을 현재 시각으로 채우면 왜 안 되는가?
+- 다음 Nginx 기록도 같은 항목으로 바꾸면 어떤 코드를 함께 쓸 수 있을까?
+## 확인문제
+**확인문제 1.** 이번 시간에는 `case.json`의 어느 입력을 읽는가?
+<details>
+<summary>정답과 해설</summary>
+	`app` 안의 실제 Flask 기록 두 건이다. `nginx` 문자열은 같은 파일에 있지만 다음 시간에 다룬다.
+</details>
+**확인문제 2.** 서로 다른 로그의 항목을 같은 이름으로 맞추는 이유는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	입력마다 다른 방식으로 읽은 뒤에도 같은 분석 코드와 화면에서 공통 항목을 사용할 수 있게 하려는 것이다. 원본의 뜻을 바꾸려는 것은 아니다.
+</details>
+**확인문제 3.** 원본에서 그대로 읽는 요청 값 세 가지는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	`method`, `path`, `status_code`다. 각각 요청 방법·경로·응답 상태이며 정규화 과정에서 성공이나 실패를 바꾸지 않는다.
+</details>
+**확인문제 4.** `app-1`은 원본 DB의 번호인가?
+<details>
+<summary>정답과 해설</summary>
+	아니다. 이번 수집 파일의 첫 앱 기록에 붙인 분석용 이름이다. 다른 파일의 같은 이름과 동일 사건이라고 연결하지 않는다.
+</details>
+**확인문제 5.** `source`를 `app`으로 넣는 이유는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	공통 형식으로 바뀐 뒤에도 Flask 앱 원본에서 온 기록임을 구분하기 위해서다. Nginx 출처와 혼동하지 않는다.
+</details>
+**확인문제 6.** 시각에 `None`을 넣는 것은 0초를 뜻하는가?
+<details>
+<summary>정답과 해설</summary>
+	아니다. 원본에 시각 값이 없다는 뜻이다. 0이나 현재 시각은 다른 사실을 주장하므로 대신 넣지 않는다.
+</details>
+**확인문제 7.** `number`를 1에서 2로 바꾸었을 때 404가 나온 이유는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	두 번째 실제 원본이 없는 경로의 404 요청이기 때문이다. 같은 변환을 다른 입력에 적용한 것이지 상태를 임의로 바꾼 것이 아니다.
+</details>
+**확인문제 8.** `raw`를 결과에 남기는 이유는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	어떤 원본을 어떻게 변환했는지 다시 확인하기 위해서다. 공통 항목으로 다 표현하지 않은 원본도 보존한다.
+</details>
+**확인문제 9.** `normalize_app.py`를 저장했는데 출력이 없는 것은 왜인가?
+<details>
+<summary>정답과 해설</summary>
+	함수 정의만으로 호출되지 않기 때문이다. `lesson2.py`가 파일을 읽고 함수를 호출한 뒤 `print`로 반환값을 보여 준다.
+</details>
+**확인문제 10.** `enumerate(case["app"], start=1)`은 무엇을 만들어 주는가?
+<details>
+<summary>정답과 해설</summary>
+	앱 원본을 차례로 꺼내며 1, 2라는 순서를 함께 준다. 그 번호를 변환 함수에 전달해 파일 안에서 구분할 이름을 만든다.
+</details>
+Flask 두 기록의 공통 형식을 만들었다. 다음에는 같은 요청을 남긴 Nginx 문자열에서 값을 꺼내 이 형식에 맞춰 보자.

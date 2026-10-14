@@ -17,7 +17,15 @@ def record_request(response):
         'path': request.path,
         'status_code': response.status_code,
     }
-    print(json.dumps(event, ensure_ascii=False), flush=True)
+    log_line = json.dumps(event, ensure_ascii=False)
+    print(log_line, flush=True)
+    log_path = os.environ.get('REQUEST_LOG_PATH')
+    if log_path:
+        try:
+            with open(log_path, 'a', encoding='utf-8') as log_file:
+                log_file.write(log_line + '\n')
+        except OSError:
+            current_app.logger.warning('실습용 JSONL 파일에 요청 기록을 쓰지 못했습니다.')
     try:
         result = requests.post(
             MONITOR_URL,

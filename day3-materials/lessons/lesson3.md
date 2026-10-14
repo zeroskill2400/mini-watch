@@ -1,206 +1,312 @@
-정상 기준은 평소 어떤 값이 나오는지 비교할 자료이고, 임계값은 검토할 후보를 고르는 경계값이다. 관찰 구간은 값을 셀 시간 범위다.
-
-같은 60초의 목록 조회 4건과 12건을 비교하며 작은 조회 규칙을 완성해 보자.
-같은 종류·같은 60초의 조회 횟수에 기준을 적용한다.
-<image src="../assets/lesson3.svg">설명용 그림. 같은 종류·같은 60초의 조회 횟수에 기준을 적용한다.</image>
-그림의 입력 자료에서 비교 기준을 거쳐 확인할 결과로 읽어 보자.
-- 조회 규칙의 조건과 카운터를 완성한다.
-- 4건과 12건의 기준10·20 판정 차이를 설명한다.
-- 검토 후보를 공격 확정과 구분한다.
+Flask 기록은 공통 항목으로 바꾸었다. 그런데 같은 요청을 남긴 Nginx 기록은 긴 글 한 줄이라 그대로는 같은 이름으로 읽을 수 없다. 이번 목표는 Nginx 원문에서 요청·상태·시각을 꺼내 Flask와 같은 항목으로 돌려주는 것이다.
+원본 한 줄이 출처와 원문을 보존한 공통 기록 한 건으로 바뀐다. 원본에 실제로 있는 시각만 읽는다.
+<image src="../assets/lesson3.svg">설명용 변환도 — 요청·상태·시각의 자리를 찾아 공통 기록에 넣고 원문은 남긴다.</image>
+위쪽 원문에서 요청 부분과 그 뒤의 상태를 찾는다. 아래쪽은 같은 이름으로 바꾼 결과다. 세부 변환은 한 부분씩 실행하며 확인하자.
+```plain text
+mini-watch-m5d3
+└─ monitor
+   └─ backend
+      └─ learning
+         ├─ classroom_data.py     준비된 파일 읽기 도구
+         ├─ lesson3.py            2단계에서 만들 실행 파일
+         ├─ normalize_nginx.py    4단계에서 완성할 변환 코드
+         └─ data
+            └─ case.json         같은 두 종류 원본
+```
 <table_of_contents/>
-## 1단계. 무엇을 얼마나 셀지 고정하기
-준비된 정상 예제와 비교 예제는 각각 60초의 교육용 HTTP 기록이다. 실제 DB에서 읽은 기록과 구분해 source=http\_demo라고 표시했다.
-입력 파일 위치는 monitor/backend/learning/data이다. VS Code에서 이 폴더의 `normal-requests.json`과 `busy-requests.json`을 연다.
-<table header-row="true" fit-page-width="true">
-<tr>
-<td>조건</td>
-<td>세는 기록</td>
-<td>제외하는 기록</td>
-</tr>
-<tr>
-<td>방법</td>
-<td>GET</td>
-<td>POST 등 다른 방법</td>
-</tr>
-<tr>
-<td>경로</td>
-<td>/</td>
-<td>/board/숫자 등 상세 경로</td>
-</tr>
-<tr>
-<td>상태</td>
-<td>200</td>
-<td>404 등 다른 결과</td>
-</tr>
-<tr>
-<td>종류</td>
-<td>post\_list</td>
-<td>post\_view·request\_error 등</td>
-</tr>
-</table>
-상세 조회와 없는 글 조회를 섞으면 목록을 얼마나 읽었는지 설명하기 어렵다. 비교 대상을 같은 종류로 고정하고 구간 길이도 맞춰 보자.
-먼저 결과 예상하기
-1. `normal-requests.json`과 `busy-requests.json`에서 조건에 맞는 행을 읽는다.
-2. 조건에 맞지 않는 상세 조회와 실패 조회를 왜 빼야 하는지 말한다.
-<details>
-<summary>예상 결과</summary>
-	정상 자료는 4건, 비교 자료는 12건이다. 전체 행 수가 아니라 네 조건을 모두 만족한 목록 조회만 센다.
-</details>
-## 2단계. 조회 규칙의 다섯 줄 채우기
-VS Code에서 monitor/backend/learning/checks.py를 연다. count\_views 함수의 수정 시작과 수정 끝 사이만 채운다. 다른 함수는 준비되어 있다.
-`checks.py` — 시작 함수
-```python
-from learning.support import failures_before
-
-
-def count_views(events):
-    total = 0
-    for event in events:
-        valid_method = event["method"] == "GET"
-        # >>>>> 수정 시작 (목록 조회 조건과 횟수) >>>>>
-        # 경로 /, 상태200, 종류post_list인지 각각 확인한다.
-        # 방법까지 네 조건이 맞으면 total에1을 더한다.
-        # <<<<< 수정 끝 <<<<<
-    return total
-
+## 1단계. 같은 사례의 Nginx 원문 열기
+준비된 프로젝트와 서비스를 계속 사용한다. VS Code에서 `C:\work\mini-watch-m5d3`를 열고 터미널의 + 옆 화살표 → Command Prompt를 선택한다. 실제 폴더 이름이 다르면 아래 경로만 자기 위치로 바꾼다.
+프로젝트 폴더의 Windows CMD
+```plain text
+cd /d C:\work\mini-watch-m5d3
 ```
-event는 기록 한 건이고 total은 맞는 기록을 센 횟수다. 방법 확인은 이미 준비됐으므로 경로·상태·종류를 비교한 뒤 모두 맞을 때 1을 더한다.
-and는 여러 조건을 모두 만족해야 한다는 뜻이고 total += 1은 현재 횟수에 1을 더한다. if 아래에서 들여쓴 줄은 조건이 맞을 때만 실행된다.
-조건과 횟수 완성하기
-1. 수정 표시 사이에 경로 /·상태200·종류 post\_list를 확인하는 세 줄을 쓴다.
-2. 네 조건이 모두 맞으면 total에 1을 더하고 Ctrl+S로 저장한다.
+문자열은 글자들을 순서대로 담은 값이다. Nginx의 긴 한 줄도 문자열이므로, 항목 이름 대신 글자의 위치와 구분 표시로 값을 찾아야 한다.
+Nginx 원문 찾기
+1. 탐색기에서 `monitor` → `backend` → `learning` → `data` → `case.json`을 연다.
+2. `nginx`에 들어 있는 문자열 두 개를 찾는다. 첫 요청 부분은 GET·`/`, 둘째는 GET·`/training-missing`이다. 원문을 고치지 않는다.
+아래는 실제 수집한 한 줄 예시다. 주소·시각·응답 크기는 자기 원문과 다를 수 있다. `case.json`에서 보이는 `\"`는 문자열 안의 큰따옴표를 저장한 표기이며, 준비된 파일 읽기 함수 `read_case()`로 읽으면 실제 큰따옴표가 된다.
+실제 수집 예시 — 파일에 덮어쓰지 않는다
+```plain text
+127.0.0.1 - - [14/Oct/2026:14:36:07 +0900] "GET / HTTP/1.1" 200 476 "-" "python-requests/2.32.5"
+```
+대괄호 안은 Nginx가 남긴 시각이다. 첫 큰따옴표 쌍 안은 요청 방법·경로·HTTP 버전이고, 그 뒤 첫 값 200은 응답 상태다. 뒤의 크기와 다른 항목은 원본에 남기되 이번 공통 항목으로 옮기지는 않는다.
 <details>
-<summary>정답 함수와 해설</summary>
-	`checks.py` — count\_views 함수
-	```python
-from learning.support import failures_before
-
-
-def count_views(events):
-    total = 0
-    for event in events:
-        valid_method = event["method"] == "GET"
-        # >>>>> 수정 시작 (목록 조회 조건과 횟수) >>>>>
-        valid_path = event["path"] == "/"
-        valid_status = event["status_code"] == 200
-        valid_kind = event["kind"] == "post_list"
-        if valid_method and valid_path and valid_status and valid_kind:
-            total += 1
-        # <<<<< 수정 끝 <<<<<
-    return total
-
+<summary>`case.json`이 없으면</summary>
+	같은 프로젝트 폴더의 CMD에서 제공된 수집 도구를 한 번 실행한다. 일반 서비스의 목록 경로와 없는 경로를 요청하고, Flask 기록 두 건과 Nginx 기록 두 줄을 같은 파일에 저장한다. 예시 원문을 대신 붙여 넣지 않는다.
+	프로젝트 폴더의 Windows CMD
+	```plain text
+docker compose -f compose-general.yaml exec -T general-api python collect_classroom.py
 	```
-	and는 조건을 모두 만족해야 한다는 뜻이다. if 아래 total += 1은 들여써서 맞는 기록에만 적용한다.
+	수집에 성공한 뒤 `learning` → `data` → `case.json`을 다시 연다. 오류가 나오면 다음 단계로 넘어가지 않고 CMD의 메시지를 확인한다. 준비 서비스가 꺼져 있다면 이 프로젝트의 `start-class.cmd`로 다시 시작한다. 기존 글·계정·DB를 지우지 않는다.
 </details>
-Windows CMD
+## 2단계. 큰따옴표를 기준으로 요청 부분 꺼내기
+Flask 기록처럼 항목 이름으로 바로 찾을 수 없으므로, 이 Nginx 형식에서 각 값의 자리를 먼저 나눈다. `split`은 지정한 글자를 경계로 문자열을 나누는 기능이다.
+문법을 읽는 작은 예 — 저장하지 않는다
+```python
+text = "왼쪽|가운데|오른쪽"
+print(text.split("|", 2))
+```
+```plain text
+['왼쪽', '가운데', '오른쪽']
+```
+두 번째 인수 2는 최대 두 번 나누라는 뜻이다. 두 번 나누면 세 부분이 생긴다. 실제 원문에서는 첫 큰따옴표 두 개만 경계로 삼아 요청 부분을 떼어 낸다. 뒤의 다른 큰따옴표까지 계속 쪼개지 않는다.
+첫 분리 프로그램 저장하기
+1. `monitor` → `backend` → `learning`에서 `lesson3.py`를 만들거나 연다.
+2. 아래 전체 코드를 넣고 Ctrl+S로 저장한다.
+`lesson3.py` — 한 줄을 나누는 전체 코드
+```python
+from learning.classroom_data import read_case
+
+case = read_case()
+number = 1
+line = case["nginx"][number - 1]
+prefix, request_text, suffix = line.split('"', 2)
+
+print("요청 부분", request_text)
+print("상태 글자", suffix.split()[0])
+```
+프로젝트 폴더의 Windows CMD
 ```plain text
 docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
 ```
 ```plain text
-normal-requests.json 4 False
-busy-requests.json 12 True
+요청 부분 GET / HTTP/1.1
+상태 글자 200
 ```
-False는 10회 기준 미해당, True는 10회 이상인 검토 후보다. 이 출력은 교육용 자료의 계산이며 실제 general DB의 조회량이 아니다.
-<details>
-<summary>0건이 나오거나 실행 오류가 나면</summary>
-	0건이면 수정 부분을 저장했는지, 종류가 post\_list인지 확인한다. 들여쓰기 오류가 나면 if 아래 total += 1의 위치를 정답 함수와 대조한다. 저장한 learning 폴더가 컨테이너에 연결되어 있어 이미지 재빌드 없이 다시 실행할 수 있다.
-</details>
-## 3단계. 같은 자료에서 기준 바꾸기
-monitor/backend/learning/lesson3.py를 열어 threshold = 10을 threshold = 20으로 바꾸고 저장한다. 나머지 자료와 조건은 유지한다.
-Windows CMD
+`read_case`가 같은 파일을 읽고 `case["nginx"][number - 1]`이 첫 Nginx 원문을 고른다. `line.split('"', 2)`의 세 부분은 앞쪽 `prefix`, 따옴표 안의 `request_text`, 뒤쪽 `suffix`에 순서대로 들어간다.
+`suffix.split()`은 뒤쪽을 공백으로 나눈다. `[0]`은 그 첫 값인 상태를 꺼낸다. 출력에 200이 보여도 아직은 글자 `"200"`이다. 숫자 비교에 쓰려면 다음 단계에서 정수로 바꾼다.
+이제 입력만 바꿔 보자. `lesson3.py`의 다음 한 줄을 바꾸고 Ctrl+S로 저장한 뒤 같은 명령을 실행한다.
+바꿀 한 줄
+```python
+number = 2
+```
+프로젝트 폴더의 Windows CMD
 ```plain text
 docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
 ```
 ```plain text
-normal-requests.json 4 False
-busy-requests.json 12 False
+요청 부분 GET /training-missing HTTP/1.1
+상태 글자 404
 ```
-12건이 달라진 것이 아니라 비교 경계가 20건으로 올라갔다. 낮은 기준은 많은 후보를 만들고 높은 기준은 더 적은 후보를 만든다.
-판정 이유 말하기
-1. 12건이 정상으로 확정된 것인지, 이번 20회 기준에만 미해당한 것인지 판단한다.
-2. threshold = 10으로 되돌리고 저장한다.
-<details>
-<summary>해설</summary>
-	기준 미해당이 무조건 정상이라는 뜻은 아니다. 기준을 넘은 것 역시 공격 확정이 아니다. 지금 규칙은 검토할 목록 조회량을 고르는 조건이다.
-</details>
-## 챙겨 가기 — 횟수와 기준을 함께 읽기
+같은 분리 코드가 두 번째 요청의 경로와 상태를 꺼냈다. Nginx가 기록한 값을 읽은 것이지 코드가 응답을 404로 바꾼 것이 아니다. 다음 전체 파일로 교체하면 첫 기록으로 돌아간다.
+## 3단계. 상태는 숫자로, 시각은 같은 기준으로 맞추기
+요청 부분을 공백으로 나누면 방법·경로·버전 세 값이 나온다. 상태 문자열은 `int`로 정수로 바꾼다. 이렇게 해야 Flask의 숫자 200과 Nginx의 상태도 같은 방식으로 비교할 수 있다.
+시각도 표기가 다를 수 있다. UTC(Coordinated Universal Time)는 시각을 비교할 때 사용하는 공통 기준이다. 원문의 `+0900`은 UTC보다 9시간 앞선 표기이므로 14시 36분 07초는 같은 순간의 UTC 05시 36분 07초로 표현된다. 시각 자체를 새로 만드는 일이 아니다.
+`datetime`은 Python에 포함된 날짜·시각 처리 도구다. `datetime.strptime`는 지정한 모양대로 시각 글자를 읽고, `astimezone(timezone.utc)`는 같은 순간을 UTC로 표현한다. `isoformat()`은 그 값을 연-월-일과 시각이 포함된 문자열로 만든다.
 <table header-row="true" fit-page-width="true">
 <tr>
-<td>개념</td>
-<td>적용한 판단</td>
+<td>원문 예시</td>
+<td>읽는 모양</td>
 </tr>
 <tr>
-<td>정상 기준</td>
-<td>비교할 4건 자료를 둔다.</td>
+<td>`14/Oct/2026`</td>
+<td>`%d/%b/%Y`: 일·영문 월 이름·연도</td>
 </tr>
 <tr>
-<td>관찰 구간</td>
-<td>두 교육용 자료의 60초를 맞춘다.</td>
+<td>`14:36:07`</td>
+<td>`%H:%M:%S`: 시·분·초</td>
 </tr>
 <tr>
-<td>임계값</td>
-<td>10과 20에서 같은 12건의 판단 차이를 말한다.</td>
-</tr>
-<tr>
-<td>후보와 근거</td>
-<td>조회한 원본 행을 근거로 남기고 공격으로 확정하지 않는다.</td>
+<td>`+0900`</td>
+<td>`%z`: UTC와의 차이</td>
 </tr>
 </table>
-마지막에는 이 함수를 실제 HTTP에도 사용한다. 화면의 새 관찰 시작 이후 ID이며 첫 결과를 불러온 때의 최근 60초인 기록만 세도록 준비된 DB 읽기 코드가 범위를 정한다.
-## 확인문제
-**확인문제 1.** 정상 기준과 임계값은 어떻게 다른가?
+각 값이 만들어지는지 확인하기
+1. `lesson3.py`를 아래 전체 코드로 바꾸고 Ctrl+S로 저장한다.
+2. 실행한 뒤 요청 값과 원본·공통 시각을 나란히 읽는다.
+`lesson3.py` — 항목을 꺼내는 전체 코드
+```python
+from datetime import datetime, timezone
+from learning.classroom_data import read_case
+
+case = read_case()
+line = case["nginx"][0]
+prefix, request_text, suffix = line.split('"', 2)
+method, path, protocol = request_text.split()
+status_code = int(suffix.split()[0])
+time_text = prefix.split("[", 1)[1].split("]", 1)[0]
+parsed_time = datetime.strptime(time_text, "%d/%b/%Y:%H:%M:%S %z")
+common_time = parsed_time.astimezone(timezone.utc).isoformat()
+
+print("요청", method, path, status_code)
+print("상태가 숫자인가", isinstance(status_code, int))
+print("원본 시각", time_text)
+print("공통 시각", common_time)
+```
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
+```
+위 실제 수집 원문을 실행한 결과다. 시각은 자신의 원문 값에 따라 달라진다. 요청 방법·경로·상태와 숫자 여부는 그대로 비교할 수 있다.
+```plain text
+요청 GET / 200
+상태가 숫자인가 True
+원본 시각 14/Oct/2026:14:36:07 +0900
+공통 시각 2026-10-14T05:36:07+00:00
+```
+`request_text.split()`의 세 값을 `method`, `path`, `protocol`이 받는다. `int`가 상태를 숫자로 만든다. `prefix`에서 `[` 뒤를 고르고 다시 `]` 앞을 골라 시각 글자만 남긴다. 그 다음 두 줄이 시각 해석과 UTC 변환을 한다.
+`isinstance(status_code, int)`는 상태가 정수인지 검사한 결과다. True는 자료형 확인이며 정상 요청이나 공격 판정이 아니다. 원문의 시간대가 이미 `+0000`이면 시계 숫자는 그대로이고 표현 모양만 달라질 수 있다.
+HTTP 버전을 받는 `protocol`은 화면에 출력하지 않는데도 왜 필요할까? 요청을 나누는 한 줄만 아래처럼 두 변수로 바꿔 저장하고 실행해 보자. 의도된 오류 실험이다.
+오류 실험에서 교체할 한 줄
+```python
+method, path = request_text.split()
+```
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
+```
+```plain text
+ValueError: too many values to unpack (expected 2)
+```
+요청 부분은 세 값인데 받는 이름을 두 개만 적어 오류가 난다. 아래 정상 줄로 복구하고 다시 실행한다. `protocol`을 공통 항목에 넣지 않더라도 세 번째 값을 받을 이름은 필요하다.
+복구할 한 줄
+```python
+method, path, protocol = request_text.split()
+```
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
+```
 <details>
-<summary>정답과 해설</summary>
-	정상 기준은 평소를 비교할 자료이고 임계값은 후보를 고르는 경계값이다. 정상 4건과 경계 10회는 역할이 다르다.
+<summary>분리나 시각 읽기 오류가 나면</summary>
+	큰따옴표·대괄호를 포함한 원문을 손으로 고치지 않았는지 확인한다. 이 코드는 제공 Nginx의 combined 접근 로그 형식을 읽는다. 다른 제품의 모든 로그 형식을 읽는 범용 파서는 아니다. 원문이 없거나 준비가 실패했다면 1단계의 제공 수집 명령으로 다시 준비한다.
 </details>
-**확인문제 2.** 이 규칙이 세는 요청의 네 조건은 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	방법GET·경로/·상태200·종류post\_list를 모두 만족해야 한다.
-</details>
-**확인문제 3.** 상세 조회를 목록 조회 횟수에 넣지 않는 이유는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	다른 종류의 요청을 섞으면 목록 조회량을 설명할 수 없기 때문이다.
-</details>
-**확인문제 4.** 전체 JSON 행 수와 규칙 횟수가 다른 이유는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	상세·실패 요청 등 조건에 맞지 않는 행을 제외하기 때문이다.
-</details>
-**확인문제 5.** if 아래에서만 total을 늘리는 이유는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	모든 기록이 아니라 네 조건을 만족한 기록만 세기 위해서다.
-</details>
-**확인문제 6.** 관찰 구간 길이를 맞추는 이유는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	긴 시간 동안 세어 양이 늘어난 것을 같은 조건의 증가로 잘못 비교하지 않기 위해서다.
-</details>
-**확인문제 7.** 기준 10회에서 4건과 12건은 어떻게 표시되는가?
-<details>
-<summary>정답과 해설</summary>
-	4건은미해당,12건은검토 후보다. 12가 10이상이기 때문이다.
-</details>
-**확인문제 8.** 기준 20회에서 같은 12건이 달라지는 이유는 무엇인가?
-<details>
-<summary>정답과 해설</summary>
-	자료는그대로이고 12가 20미만이므로 이조건에는미해당이된다.
-</details>
-**확인문제 9.** True는 공격이 확정되었다는 뜻인가?
-<details>
-<summary>정답과 해설</summary>
-	아니다. 정한 조건에 맞는검토 후보이며 정상작업도 조회가많을수있다.
-</details>
-**확인문제 10.** 실제 HTTP에 적용할 때 과거 요청을 어떻게 제외하는가?
-<details>
-<summary>정답과 해설</summary>
-	새관찰시작에서현재마지막ID를읽고이후ID이면서최근 60초인기록만쓴다. 원본DB를삭제하지않는다.
-</details>
+## 4단계. 공통 기록을 돌려주는 함수 완성하기
+값을 꺼내는 처리를 확인했으니 Flask와 같은 항목을 반환하도록 묶자. 입력만 Nginx 문자열이고, 반환할 이름은 `id`, `source`, `time`, `method`, `path`, `status_code`, `raw`로 같다.
+정규화 함수 저장하기
+1. 같은 `learning` 폴더에 `normalize_nginx.py`를 만들거나 연다.
+2. 아래 전체 코드를 넣고 Ctrl+S로 저장한다. 날짜 처리 도구는 Python에 포함되어 있어 새 패키지를 설치하지 않는다.
+`normalize_nginx.py` — 파일 전체
+```python
+from datetime import datetime, timezone
+
+
+def normalize_nginx(line, number):
+    prefix, request_text, suffix = line.split('"', 2)
+    method, path, protocol = request_text.split()
+    time_text = prefix.split("[", 1)[1].split("]", 1)[0]
+    parsed_time = datetime.strptime(time_text, "%d/%b/%Y:%H:%M:%S %z")
+    return {
+        "id": f"nginx-{number}",
+        "source": "nginx",
+        "time": parsed_time.astimezone(timezone.utc).isoformat(),
+        "method": method,
+        "path": path,
+        "status_code": int(suffix.split()[0]),
+        "raw": line,
+    }
+```
+함수 앞부분은 방금 실행한 분리·시각 해석 코드다. 반환 딕셔너리에서 출처는 `nginx`, 이름은 `nginx-1`처럼 이 파일 안의 순서로 붙인다. `raw`에는 원본 문자열을 그대로 넣어 어떤 글자를 해석했는지 다시 볼 수 있게 한다.
+같은 함수로 두 줄 처리하기
+1. `lesson3.py`를 아래 전체 코드로 바꿔 저장한다.
+2. 같은 폴더에 `normalize_nginx.py`와 준비된 `classroom_data.py`가 있는지 확인한 뒤 실행한다.
+`lesson3.py` — 이번 시간이 끝날 때 남길 전체 파일
+```python
+from learning.classroom_data import read_case
+from learning.normalize_nginx import normalize_nginx
+
+case = read_case()
+for number, line in enumerate(case["nginx"], start=1):
+    event = normalize_nginx(line, number)
+    print(event["id"], event["source"], event["method"],
+          event["path"], event["status_code"])
+    print("원본 보존", event["raw"] == line)
+    print("UTC 시각", event["time"])
+```
+프로젝트 폴더의 Windows CMD
+```plain text
+docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
+```
+실제 수집 예시에서는 두 기록이 같은 초에 남아 아래처럼 나왔다. 내 출력은 자기 원문의 시각이며, 두 시각이 서로 달라도 그대로 유지한다.
+```plain text
+nginx-1 nginx GET / 200
+원본 보존 True
+UTC 시각 2026-10-14T05:36:07+00:00
+nginx-2 nginx GET /training-missing 404
+원본 보존 True
+UTC 시각 2026-10-14T05:36:07+00:00
+```
+`enumerate(..., start=1)`이 원문과 순서를 하나씩 주고, `normalize_nginx`가 한 건을 바꾼다. `event["raw"] == line`은 반환값에 같은 원문을 남겼는지 확인한다. `print` 세 개가 요청·원본 보존 여부·시각을 차례로 보여 준다.
+- Nginx 두 결과의 항목 이름이 Flask 결과와 같다.
+- `status_code`는 숫자이고 `raw`에는 원본 문자열이 남는다.
+- Nginx 시각은 원문에서 바꾸어 표현하고 Flask의 없는 시각은 여전히 `None`으로 둔다.
+## 챙겨 가기 — 읽는 방법은 달라도 결과 항목은 같게
+<table header-row="true" fit-page-width="true">
+<tr>
+<td>변환</td>
+<td>결과</td>
+</tr>
+<tr>
+<td>큰따옴표·공백으로 나누기</td>
+<td>원문의 요청 방법·경로·상태를 찾는다.</td>
+</tr>
+<tr>
+<td>`int`</td>
+<td>상태 글자를 비교 가능한 숫자로 바꾼다.</td>
+</tr>
+<tr>
+<td>원문 시각을 UTC로 표현</td>
+<td>다른 시간대 표기를 같은 기준으로 맞춘다.</td>
+</tr>
+<tr>
+<td>`source`와 `raw` 보존</td>
+<td>같은 형식 안에서도 출처와 원문을 확인한다.</td>
+</tr>
+</table>
 ## 되새김 문제
 다음 질문에 말로 답할 수 있으면 이번 시간을 제대로 이해한 것이다.
-- 어떤 출처와 단위를 비교했는가?
-- 판정 기준과 근거는 무엇인가?
-- 이 결과만으로 확정할 수 없는 것은 무엇인가?
-다음 활동에서도 출처와 비교 기준을 확인하며 근거를 읽어 보자.
+- 원문에서 요청 부분과 상태를 각각 어디서 꺼냈는가?
+- 시각 표현을 바꾸는 것과 없는 시각을 만드는 것은 어떻게 다른가?
+- 두 정규화 함수의 입력은 다른데 결과 항목은 왜 같아야 하는가?
+## 확인문제
+**확인문제 1.** 이번 입력은 Flask 딕셔너리와 어떻게 다른가?
+<details>
+<summary>정답과 해설</summary>
+	Nginx가 남긴 문자열 한 줄이다. 이름으로 바로 값을 읽기보다 큰따옴표·공백·대괄호 위치를 이용해 항목을 꺼낸다.
+</details>
+**확인문제 2.** `line.split('"', 2)`에서 2는 결과 두 개라는 뜻인가?
+<details>
+<summary>정답과 해설</summary>
+	아니다. 최대 두 번 나눈다는 뜻으로 앞부분·요청 부분·뒷부분 세 개가 생긴다.
+</details>
+**확인문제 3.** 첫 큰따옴표 안의 요청 부분에는 어떤 값이 있는가?
+<details>
+<summary>정답과 해설</summary>
+	요청 방법, 경로, HTTP 버전이다. `GET / HTTP/1.1`에서는 GET·/·HTTP/1.1 세 값이다.
+</details>
+**확인문제 4.** 큰따옴표 뒤에서 상태를 꺼내는 코드는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	`suffix.split()[0]`이다. 뒤쪽을 공백으로 나눈 뒤 첫 값인 상태 문자열을 꺼낸다.
+</details>
+**확인문제 5.** 화면에 200으로 보이는 상태를 왜 `int`로 바꾸는가?
+<details>
+<summary>정답과 해설</summary>
+	원문에서 나눈 값은 문자열이기 때문이다. 숫자 상태를 가진 Flask 결과와 같은 조건으로 비교하려면 정수로 맞춘다.
+</details>
+**확인문제 6.** 입력 번호를 2로 바꾸면 왜 없는 경로가 나오는가?
+<details>
+<summary>정답과 해설</summary>
+	같은 파일의 두 번째 Nginx 원문이 그 요청을 기록했기 때문이다. 변환 코드가 새 요청이나 오류를 만든 것이 아니다.
+</details>
+**확인문제 7.** 원문 14시 36분 07초 +0900을 UTC 05시 36분 07초로 바꾸면 사건 시각이 달라지는가?
+<details>
+<summary>정답과 해설</summary>
+	아니다. 같은 순간을 다른 시간대 기준으로 표현한다. 원문의 시간대 차이를 함께 읽기 때문에 가능한 변환이다.
+</details>
+**확인문제 8.** Nginx에 시각이 있으니 Flask의 `time`도 그 값으로 채워도 되는가?
+<details>
+<summary>정답과 해설</summary>
+	안 된다. Flask 원본에는 시각이 없으므로 `None`을 유지한다. 출처가 다른 값을 확인 없이 원본 사실로 채우지 않는다.
+</details>
+**확인문제 9.** `raw`에 원문 전체를 남기는 이유는 무엇인가?
+<details>
+<summary>정답과 해설</summary>
+	공통 항목이 어떤 원문에서 나왔는지 확인하고, 변환하지 않은 항목도 다시 살펴보기 위해서다.
+</details>
+**확인문제 10.** 두 결과의 공통 항목이 같아지면 다음에 무엇을 할 수 있는가?
+<details>
+<summary>정답과 해설</summary>
+	한 목록으로 모아 같은 열과 조건으로 읽을 수 있다. 출처와 원문은 유지하며, 행을 합친 것만으로 같은 요청임을 증명하거나 중복 제거한 것은 아니다.
+</details>
+입력이 객체이든 문자열이든 같은 항목의 기록을 반환하게 만들었다. 다음에는 두 함수의 결과를 한 목록에 모아 함께 읽어 보자.
