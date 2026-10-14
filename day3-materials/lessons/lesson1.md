@@ -177,19 +177,19 @@ Nginx는 앱 앞에서 요청을 받아 전달하는 웹서버다. combined는 �
 <td>\[ \] 안에 시각과 UTC와의 차이가 있음</td>
 </tr>
 </table>
-원본을 각각 읽으면 같은 질문에도 다른 코드가 필요하다. 둘 다 status\_code라는 숫자로 맞추면 이후에는 status\_code >= 400이라는 한 조건을 적용할 수 있다.
+원본을 각각 읽으면 같은 질문에도 다른 코드가 필요하다. 둘 다 status\_code라는 숫자로 맞추면 이후에는 `status_code >= 400`이라는 한 조건을 적용할 수 있다.
 ## 4단계. 어느 코드와 설정이 로그를 만드는지 찾기
 ### 앱에서는 응답 뒤에 기록 함수를 호출한다
-Flask는 이 게시판의 Python 웹 프로그램을 만드는 도구다. VS Code에서 general/app.py를 열어 다음 등록 코드를 찾자. 아래는 읽기용 발췌이며 파일을 교체하지 않는다.
-general/app.py — 기록 함수를 연결한 부분
+Flask는 이 게시판의 Python 웹 프로그램을 만드는 도구다. VS Code에서 `general/app.py`를 열어 다음 등록 코드를 찾자. 아래는 읽기용 발췌이며 파일을 교체하지 않는다.
+`general/app.py` — 기록 함수를 연결한 부분
 ```python
 from request_logging import record_request
 
 app.after_request(record_request)
 ```
 after\_request는 응답 객체를 만든 뒤, 사용자에게 보내기 전에 실행할 함수를 등록한다. 그래서 요청 경로뿐 아니라 응답 상태도 기록할 수 있다. 함수를 정의만 해 둔 것이 아니라 여기서 실제 요청 처리에 연결했다.
-이제 general/request\_logging.py의 record\_request를 열자. 아래 부분이 app에서 본 세 값을 만든다.
-general/request\_logging.py — 값 생성과 출력 부분, 읽기용 발췌
+이제 `general/request_logging.py`의 record\_request를 열자. 아래 부분이 app에서 본 세 값을 만든다.
+`general/request_logging.py` — 값 생성과 출력 부분, 읽기용 발췌
 ```python
 event = {
     'method': request.method,
@@ -303,7 +303,7 @@ None은 Python에서 값이 없음을 나타낸다. 시각이 없는 것을 지�
 **확인문제 4.** 앱의 record\_request 함수는 어느 코드에서 실제 요청과 연결되는가?
 <details>
 <summary>정답과 해설</summary>
-	general/app.py의 app.after\_request(record\_request)가 연결한다. 응답 객체가 만들어진 뒤 상태를 읽어 기록한다.
+	`general/app.py`의 app.after\_request(record\_request)가 연결한다. 응답 객체가 만들어진 뒤 상태를 읽어 기록한다.
 </details>
 **확인문제 5.** Flask의 print가 Nginx 접속 로그도 만드는가?
 <details>

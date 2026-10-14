@@ -23,7 +23,7 @@ docker compose -f compose-monitor.yaml exec monitor-api python -m learning.repor
 <details>
 <summary>분석 파일을 완성하지 못했으면</summary>
 	아래는 연결 확인에 쓰는 완성 파일이다. 해당 함수가 비어 있거나 파일이 없을 때만 같은 이름의 파일 전체를 교체하고 저장한다. 원본 `case.json`이나 DB를 수정하는 코드가 아니다.
-	monitor/backend/learning/normalize\_app.py — 전체 코드
+	`monitor/backend/learning/normalize_app.py` — 전체 코드
 	```python
 def normalize_app(event, number):
     return {
@@ -36,7 +36,7 @@ def normalize_app(event, number):
         "raw": event,
     }
 	```
-	monitor/backend/learning/normalize\_nginx.py — 전체 코드
+	`monitor/backend/learning/normalize_nginx.py` — 전체 코드
 	```python
 from datetime import datetime, timezone
 
@@ -56,7 +56,7 @@ def normalize_nginx(line, number):
         "raw": line,
     }
 	```
-	monitor/backend/learning/merge.py — 전체 코드
+	`monitor/backend/learning/merge.py` — 전체 코드
 	```python
 from learning.classroom_data import read_case
 from learning.normalize_app import normalize_app
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         print(event["id"], event["source"], event["method"], event["path"], event["status_code"])
     print("전체 관측:", len(events))
 	```
-	monitor/backend/learning/report.py — 전체 코드
+	`monitor/backend/learning/report.py` — 전체 코드
 	```python
 from learning.merge import load_normalized_events
 
@@ -189,7 +189,7 @@ docker compose -f compose-monitor.yaml logs --tail 20 monitor-api
 출처를 바꾸고 같은 조건 비교하기
 1. 오류만 보기는 켜 둔 채 출처를 nginx로 바꾼다.
 2. 표시 관측 1과 nginx-2의 /training-missing·404를 확인한다.
-출처는 바뀌었지만 오류를 고르는 조건은 status\_code >= 400으로 같다. 문자열 위치를 매번 다시 찾지 않아도 되는 이유가 정규화다.
+출처는 바뀌었지만 오류를 고르는 조건은 `status_code >= 400`으로 같다. 문자열 위치를 매번 다시 찾지 않아도 되는 이유가 정규화다.
 <table header-row="true" fit-page-width="true">
 <tr>
 <td>출처</td>
@@ -238,8 +238,8 @@ raw를 남겨 둔 덕분에 변환을 잘못했는지 다시 확인할 수 있�
 1. 오류만 보기를 끄고 출처를 전체로 둔다.
 2. 표시 관측 4가 다시 나오는지 확인한다. 원본 보기 토글은 닫아도 원본이 지워지지 않는다.
 ## 5단계. 내가 구현한 범위 설명하기
-버튼에서 함수까지 연결된 부분도 확인하자. monitor/backend/routes/analysis.py에는 아래 코드가 준비되어 있다. API는 화면의 요청을 받아 Python 결과를 돌려주는 접점이며, 여기서는 /api/analysis라는 주소를 쓴다.
-routes/analysis.py — 준비된 연결 부분, 읽기용 발췌
+버튼에서 함수까지 연결된 부분도 확인하자. `monitor/backend/routes/analysis.py`에는 아래 코드가 준비되어 있다. API는 화면의 요청을 받아 Python 결과를 돌려주는 접점이며, 여기서는 /api/analysis라는 주소를 쓴다.
+`routes/analysis.py` — 준비된 연결 부분, 읽기용 발췌
 ```python
 from learning.report import build_report
 

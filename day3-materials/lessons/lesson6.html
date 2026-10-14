@@ -56,7 +56,7 @@ docker compose -f compose-monitor.yaml exec monitor-api python -m learning.repor
 <p>이 숫자는 <code>case.json</code>의 앱 2행·Nginx 2행을 합쳐 계산한 결과다. 오류 관측은 상태가 400 이상인 두 행이다. 한 출처의 원본을 빠뜨렸거나 함수가 아직 비어 있으면 여기서 먼저 고친다.</p>
 <details>
 <summary>분석 파일을 완성하지 못했으면</summary>
-<p>아래는 연결 확인에 쓰는 완성 파일이다. 해당 함수가 비어 있거나 파일이 없을 때만 같은 이름의 파일 전체를 교체하고 저장한다. 원본 <code>case.json</code>이나 DB를 수정하는 코드가 아니다. monitor/backend/learning/normalize_app.py — 전체 코드</p>
+<p>아래는 연결 확인에 쓰는 완성 파일이다. 해당 함수가 비어 있거나 파일이 없을 때만 같은 이름의 파일 전체를 교체하고 저장한다. 원본 <code>case.json</code>이나 DB를 수정하는 코드가 아니다. <code>monitor/backend/learning/normalize_app.py</code> — 전체 코드</p>
 <pre><code class="language-python">def normalize_app(event, number):
     return {
         &quot;id&quot;: f&quot;app-{number}&quot;,
@@ -67,7 +67,7 @@ docker compose -f compose-monitor.yaml exec monitor-api python -m learning.repor
         &quot;status_code&quot;: int(event[&quot;status_code&quot;]),
         &quot;raw&quot;: event,
     }</code></pre>
-<p>monitor/backend/learning/normalize_nginx.py — 전체 코드</p>
+<p><code>monitor/backend/learning/normalize_nginx.py</code> — 전체 코드</p>
 <pre><code class="language-python">from datetime import datetime, timezone
 
 
@@ -85,7 +85,7 @@ def normalize_nginx(line, number):
         &quot;status_code&quot;: int(suffix.split()[0]),
         &quot;raw&quot;: line,
     }</code></pre>
-<p>monitor/backend/learning/merge.py — 전체 코드</p>
+<p><code>monitor/backend/learning/merge.py</code> — 전체 코드</p>
 <pre><code class="language-python">from learning.classroom_data import read_case
 from learning.normalize_app import normalize_app
 from learning.normalize_nginx import normalize_nginx
@@ -106,7 +106,7 @@ if __name__ == &quot;__main__&quot;:
     for event in events:
         print(event[&quot;id&quot;], event[&quot;source&quot;], event[&quot;method&quot;], event[&quot;path&quot;], event[&quot;status_code&quot;])
     print(&quot;전체 관측:&quot;, len(events))</code></pre>
-<p>monitor/backend/learning/report.py — 전체 코드</p>
+<p><code>monitor/backend/learning/report.py</code> — 전체 코드</p>
 <pre><code class="language-python">from learning.merge import load_normalized_events
 
 
@@ -208,7 +208,7 @@ nginx-2   nginx   GET  /training-missing   404</code></pre>
 <li>오류만 보기는 켜 둔 채 출처를 nginx로 바꾼다.</li>
 <li>표시 관측 1과 nginx-2의 /training-missing·404를 확인한다.</li>
 </ol>
-<p>출처는 바뀌었지만 오류를 고르는 조건은 status_code &gt;= 400으로 같다. 문자열 위치를 매번 다시 찾지 않아도 되는 이유가 정규화다.</p>
+<p>출처는 바뀌었지만 오류를 고르는 조건은 <code>status_code &gt;= 400</code>으로 같다. 문자열 위치를 매번 다시 찾지 않아도 되는 이유가 정규화다.</p>
 <div class="table-wrap"><table>
 <thead><tr>
 <th>출처</th>
@@ -262,7 +262,7 @@ nginx-2   nginx   GET  /training-missing   404</code></pre>
 <li>표시 관측 4가 다시 나오는지 확인한다. 원본 보기 토글은 닫아도 원본이 지워지지 않는다.</li>
 </ol>
 <h2>5단계. 내가 구현한 범위 설명하기</h2>
-<p>버튼에서 함수까지 연결된 부분도 확인하자. monitor/backend/routes/analysis.py에는 아래 코드가 준비되어 있다. API는 화면의 요청을 받아 Python 결과를 돌려주는 접점이며, 여기서는 /api/analysis라는 주소를 쓴다. routes/analysis.py — 준비된 연결 부분, 읽기용 발췌</p>
+<p>버튼에서 함수까지 연결된 부분도 확인하자. <code>monitor/backend/routes/analysis.py</code>에는 아래 코드가 준비되어 있다. API는 화면의 요청을 받아 Python 결과를 돌려주는 접점이며, 여기서는 /api/analysis라는 주소를 쓴다. <code>routes/analysis.py</code> — 준비된 연결 부분, 읽기용 발췌</p>
 <pre><code class="language-python">from learning.report import build_report
 
 @analysis_bp.get(&quot;/api/analysis&quot;)
