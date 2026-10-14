@@ -1,206 +1,186 @@
-정상 기준은 평소 어떤 값이 나오는지 비교할 자료이고, 임계값은 검토할 후보를 고르는 경계값이다. 관찰 구간은 값을 셀 시간 범위다.
-
-같은 60초의 목록 조회 4건과 12건을 비교하며 작은 조회 규칙을 완성해 보자.
-같은 종류·같은 60초의 조회 횟수에 기준을 적용한다.
-<image src="../assets/lesson3.svg">설명용 그림. 같은 종류·같은 60초의 조회 횟수에 기준을 적용한다.</image>
-그림의 입력 자료에서 비교 기준을 거쳐 확인할 결과로 읽어 보자.
-- 조회 규칙의 조건과 카운터를 완성한다.
-- 4건과 12건의 기준10·20 판정 차이를 설명한다.
-- 검토 후보를 공격 확정과 구분한다.
+앱과 Nginx의 원본이 한곳에 모였지만 모양은 아직 다르다. 먼저 앱 기록을 공통 항목으로 바꾸는 함수를 완성하자.
+이번 시간에 확인할 흐름이다.
+<image src="../assets/lesson3.svg">설명용 흐름도 — 왼쪽의 실제 입력을 가운데에서 처리해 오른쪽 결과로 확인한다.</image>
+- 실제 앱 로그를 변환하는 파일 하나를 완성한다.
+- 출처와 숫자 상태를 확인하고, 새로 연 경로가 실행 결과에 추가되는지 본다.
+```plain text
+mini-watch-m5d3
+└─ monitor/backend/learning/
+   ├─ log_data.py          준비된 원본 읽기
+   └─ normalize_app.py     이번에 완성
+```
 <table_of_contents/>
-## 1단계. 무엇을 얼마나 셀지 고정하기
-준비된 정상 예제와 비교 예제는 각각 60초의 교육용 HTTP 기록이다. 실제 DB에서 읽은 기록과 구분해 source=http\_demo라고 표시했다.
-입력 파일 위치는 monitor/backend/learning/data이다. VS Code에서 이 폴더의 `normal-requests.json`과 `busy-requests.json`을 연다.
+## 1단계. 변환할 항목 정하기
+정규화는 서로 다른 원본을 같은 항목과 값의 형식으로 맞추는 일이다. 예를 들어 앱의 상태 값과 Nginx 줄에서 꺼낸 상태를 모두 status\_code라는 정수로 두면 같은 조건으로 비교할 수 있다.
 <table header-row="true" fit-page-width="true">
 <tr>
-<td>조건</td>
-<td>세는 기록</td>
-<td>제외하는 기록</td>
+<td>공통 항목</td>
+<td>앱에서 넣을 값</td>
+<td>필요한 이유</td>
 </tr>
 <tr>
-<td>방법</td>
-<td>GET</td>
-<td>POST 등 다른 방법</td>
+<td>source</td>
+<td>app</td>
+<td>어느 프로그램의 기록인지 구분</td>
 </tr>
 <tr>
-<td>경로</td>
-<td>/</td>
-<td>/board/숫자 등 상세 경로</td>
+<td>method</td>
+<td>원본 method</td>
+<td>GET·POST 구분</td>
 </tr>
 <tr>
-<td>상태</td>
-<td>200</td>
-<td>404 등 다른 결과</td>
+<td>path</td>
+<td>원본 path</td>
+<td>요청한 위치 확인</td>
 </tr>
 <tr>
-<td>종류</td>
-<td>post\_list</td>
-<td>post\_view·request\_error 등</td>
+<td>status\_code</td>
+<td>원본 상태를 int로 변환</td>
+<td>숫자로 오류 조건 비교</td>
+</tr>
+<tr>
+<td>id / raw</td>
+<td>행 구분 이름 / 원본 객체</td>
+<td>화면 행 구분 / 원본 대조</td>
 </tr>
 </table>
-상세 조회와 없는 글 조회를 섞으면 목록을 얼마나 읽었는지 설명하기 어렵다. 비교 대상을 같은 종류로 고정하고 구간 길이도 맞춰 보자.
-먼저 결과 예상하기
-1. `normal-requests.json`과 `busy-requests.json`에서 조건에 맞는 행을 읽는다.
-2. 조건에 맞지 않는 상세 조회와 실패 조회를 왜 빼야 하는지 말한다.
-<details>
-<summary>예상 결과</summary>
-	정상 자료는 4건, 비교 자료는 12건이다. 전체 행 수가 아니라 네 조건을 모두 만족한 목록 조회만 센다.
-</details>
-## 2단계. 조회 규칙의 다섯 줄 채우기
-VS Code에서 monitor/backend/learning/checks.py를 연다. count\_views 함수의 수정 시작과 수정 끝 사이만 채운다. 다른 함수는 준비되어 있다.
-`checks.py` — 시작 함수
+id는 app-1처럼 이 목록의 행을 구분할 이름이다. 여러 장비의 기록이 같은 요청인지 증명하는 번호가 아니다. 원본에 없는 계정·시각은 만들어 넣지 않는다.
+한 행만 놓고 변환 전후를 먼저 비교하자. 아래는 입력과 결과의 미리보기이며 파일에 따로 저장하지 않는다.
+입력 원본 한 행
+```json
+{"method": "GET", "path": "/training-missing", "status_code": 404}
+```
+이 원본을 첫 행으로 변환한 결과
+```json
+{
+    "id": "app-1",
+    "source": "app",
+    "method": "GET",
+    "path": "/training-missing",
+    "status_code": 404,
+    "raw": {"method": "GET", "path": "/training-missing", "status_code": 404}
+}
+```
+경로와 404는 그대로다. 어느 출처인지, 원본이 무엇인지를 함께 담은 것이 변화다.
+## 2단계. 앱 변환 함수를 완성하기
+### 전체 파일을 바꾸고 실행하자
+다른 이름으로 clone했다면 아래 파일 열기와 모든 cd 명령의 mini-watch-m5d3를 실제 폴더명으로 바꾼다.
+분석 파일 바꾸기
+1. VS Code에서 `C:\work\mini-watch-m5d3` 폴더를 열고 `monitor/backend/learning/normalize_app.py`을 선택한다.
+2. 파일 내용을 아래 전체 코드로 바꾸고 Ctrl+S로 저장한다.
+`monitor/backend/learning/normalize_app.py` — 파일 전체
 ```python
-from learning.support import failures_before
+def normalize_app(event, number):
+    return {
+        "id": f"app-{number}",
+        "source": "app",
+        "method": event["method"],
+        "path": event["path"],
+        "status_code": int(event["status_code"]),
+        "raw": event,
+    }
 
 
-def count_views(events):
-    total = 0
-    for event in events:
-        valid_method = event["method"] == "GET"
-        # >>>>> 수정 시작 (목록 조회 조건과 횟수) >>>>>
-        # 경로 /, 상태200, 종류post_list인지 각각 확인한다.
-        # 방법까지 네 조건이 맞으면 total에1을 더한다.
-        # <<<<< 수정 끝 <<<<<
-    return total
+if __name__ == "__main__":
+    from learning.log_data import read_logs
 
+    logs = read_logs()
+    if not logs["app"]:
+        print("앱 원본이 없습니다. 일반 게시판에서 로그인하거나 목록을 열어 보세요.")
+    for number, raw in enumerate(logs["app"], start=1):
+        event = normalize_app(raw, number)
+        print(event["source"], event["method"], event["path"], event["status_code"])
 ```
-event는 기록 한 건이고 total은 맞는 기록을 센 횟수다. 방법 확인은 이미 준비됐으므로 경로·상태·종류를 비교한 뒤 모두 맞을 때 1을 더한다.
-and는 여러 조건을 모두 만족해야 한다는 뜻이고 total += 1은 현재 횟수에 1을 더한다. if 아래에서 들여쓴 줄은 조건이 맞을 때만 실행된다.
-조건과 횟수 완성하기
-1. 수정 표시 사이에 경로 /·상태200·종류 post\_list를 확인하는 세 줄을 쓴다.
-2. 네 조건이 모두 맞으면 total에 1을 더하고 Ctrl+S로 저장한다.
+event는 원본 한 개, number는 그 원본의 순서다. 딕셔너리의 값을 읽어 새 딕셔너리로 돌려주되 raw에는 원본을 그대로 보관한다. int는 값을 정수로 바꾸는 Python 기본 함수다.
+파일 아래의 if \_\_name\_\_부터는 준비된 실행 확인부다. read\_logs로 현재 로그를 읽고 enumerate로 1부터 순서를 붙여 함수를 호출한다. 오늘 바꾸는 핵심은 위 normalize\_app의 반환값이다.
+VS Code의 터미널 → 새 터미널에서 + 옆 화살표 → Command Prompt를 선택하고 실행하자.
+프로젝트 폴더의 Windows CMD
+```bash
+cd /d C:\work\mini-watch-m5d3
+docker compose exec -T monitor-api python -m learning.normalize_app
+```
+```plain text
+app GET /training-missing 404
+```
+출력 예시 중 목표 경로에 해당하는 한 줄이다. 내 화면에는 로그인·스타일 요청 등 다른 행도 함께 나온다. 파일을 저장하면 연결된 컨테이너에서도 같은 코드를 읽으므로 이미지를 다시 빌드하지 않는다.
+### 원본과 결과를 대조하자
+변환 결과 읽기
+1. 감시 화면에서 원본 로그 불러오기를 누르고 앱 원본의 /training-missing을 찾는다.
+2. 터미널 결과의 같은 경로에서 GET과 404가 유지되고 앞에 app이 붙었는지 비교한다.
+정규화는 원래 오류를 정상으로 고치는 작업이 아니다. 404를 유지한 채 읽는 모양을 통일한다.
+## 3단계. 새 요청으로 변환을 다시 확인하기
+### 내가 정한 경로가 추가되는지 보자
+새 입력으로 다시 실행하기
+1. 일반 게시판 탭에서 [http://localhost:8081/app-check](http://localhost:8081/app-check)을 연다. 없는 주소이므로 404 화면이 나온다.
+2. 아래 명령을 다시 실행하고 app GET /app-check 404를 찾는다.
+프로젝트 폴더의 Windows CMD
+```bash
+cd /d C:\work\mini-watch-m5d3
+docker compose exec -T monitor-api python -m learning.normalize_app
+```
+새 경로가 나타나면 고정 예제만 변환한 것이 아니라 현재 로그를 다시 읽은 것이다. 아직 Nginx 변환과 통합 집계는 만들지 않았으므로 감시 화면의 통합 표는 완성 안내 상태로 남는다.
 <details>
-<summary>정답 함수와 해설</summary>
-	`checks.py` — count\_views 함수
+<summary>상태 항목 이름을 잘못 적으면</summary>
+	원본에는 status\_code가 있는데 event\["status"\]로 읽으면 다음 오류가 난다. 실행 파일에서는 올바른 status\_code를 유지한다.
+	의도된 오류 — 잘못된 키를 읽는 독립 예시
 	```python
-from learning.support import failures_before
-
-
-def count_views(events):
-    total = 0
-    for event in events:
-        valid_method = event["method"] == "GET"
-        # >>>>> 수정 시작 (목록 조회 조건과 횟수) >>>>>
-        valid_path = event["path"] == "/"
-        valid_status = event["status_code"] == 200
-        valid_kind = event["kind"] == "post_list"
-        if valid_method and valid_path and valid_status and valid_kind:
-            total += 1
-        # <<<<< 수정 끝 <<<<<
-    return total
-
+event = {"method": "GET", "path": "/app-check", "status_code": 404}
+print(event["status"])
 	```
-	and는 조건을 모두 만족해야 한다는 뜻이다. if 아래 total += 1은 들여써서 맞는 기록에만 적용한다.
+	```plain text
+KeyError: 'status'
+	```
+	KeyError는 딕셔너리에 그 이름의 항목이 없다는 뜻이다. 원본 키와 코드의 철자를 대조한다.
 </details>
-Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
-```
-```plain text
-normal-requests.json 4 False
-busy-requests.json 12 True
-```
-False는 10회 기준 미해당, True는 10회 이상인 검토 후보다. 이 출력은 교육용 자료의 계산이며 실제 general DB의 조회량이 아니다.
-<details>
-<summary>0건이 나오거나 실행 오류가 나면</summary>
-	0건이면 수정 부분을 저장했는지, 종류가 post\_list인지 확인한다. 들여쓰기 오류가 나면 if 아래 total += 1의 위치를 정답 함수와 대조한다. 저장한 learning 폴더가 컨테이너에 연결되어 있어 이미지 재빌드 없이 다시 실행할 수 있다.
-</details>
-## 3단계. 같은 자료에서 기준 바꾸기
-monitor/backend/learning/lesson3.py를 열어 threshold = 10을 threshold = 20으로 바꾸고 저장한다. 나머지 자료와 조건은 유지한다.
-Windows CMD
-```plain text
-docker compose -f compose-monitor.yaml exec monitor-api python -m learning.lesson3
-```
-```plain text
-normal-requests.json 4 False
-busy-requests.json 12 False
-```
-12건이 달라진 것이 아니라 비교 경계가 20건으로 올라갔다. 낮은 기준은 많은 후보를 만들고 높은 기준은 더 적은 후보를 만든다.
-판정 이유 말하기
-1. 12건이 정상으로 확정된 것인지, 이번 20회 기준에만 미해당한 것인지 판단한다.
-2. threshold = 10으로 되돌리고 저장한다.
-<details>
-<summary>해설</summary>
-	기준 미해당이 무조건 정상이라는 뜻은 아니다. 기준을 넘은 것 역시 공격 확정이 아니다. 지금 규칙은 검토할 목록 조회량을 고르는 조건이다.
-</details>
-## 챙겨 가기 — 횟수와 기준을 함께 읽기
-<table header-row="true" fit-page-width="true">
-<tr>
-<td>개념</td>
-<td>적용한 판단</td>
-</tr>
-<tr>
-<td>정상 기준</td>
-<td>비교할 4건 자료를 둔다.</td>
-</tr>
-<tr>
-<td>관찰 구간</td>
-<td>두 교육용 자료의 60초를 맞춘다.</td>
-</tr>
-<tr>
-<td>임계값</td>
-<td>10과 20에서 같은 12건의 판단 차이를 말한다.</td>
-</tr>
-<tr>
-<td>후보와 근거</td>
-<td>조회한 원본 행을 근거로 남기고 공격으로 확정하지 않는다.</td>
-</tr>
-</table>
-마지막에는 이 함수를 실제 HTTP에도 사용한다. 화면의 새 관찰 시작 이후 ID이며 첫 결과를 불러온 때의 최근 60초인 기록만 세도록 준비된 DB 읽기 코드가 범위를 정한다.
 ## 확인문제
-**확인문제 1.** 정상 기준과 임계값은 어떻게 다른가?
+**확인문제 1.** 정규화가 해결하는 문제는 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	정상 기준은 평소를 비교할 자료이고 임계값은 후보를 고르는 경계값이다. 정상 4건과 경계 10회는 역할이 다르다.
+	원본마다 다른 항목 이름과 값의 형식을 공통 구조로 맞춰 같은 코드로 읽게 한다.
 </details>
-**확인문제 2.** 이 규칙이 세는 요청의 네 조건은 무엇인가?
+**확인문제 2.** source에 app을 추가하는 이유는 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	방법GET·경로/·상태200·종류post\_list를 모두 만족해야 한다.
+	변환 뒤에도 앱에서 온 기록임을 알기 위해서다. Nginx 기록과 구분한다.
 </details>
-**확인문제 3.** 상세 조회를 목록 조회 횟수에 넣지 않는 이유는 무엇인가?
+**확인문제 3.** event\["path"\]는 무엇을 읽는가?
 <details>
 <summary>정답과 해설</summary>
-	다른 종류의 요청을 섞으면 목록 조회량을 설명할 수 없기 때문이다.
+	현재 원본 객체에 들어 있는 요청 경로를 읽는다. 새 경로를 임의로 만들지 않는다.
 </details>
-**확인문제 4.** 전체 JSON 행 수와 규칙 횟수가 다른 이유는 무엇인가?
+**확인문제 4.** int로 상태를 바꾸는 이유는 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	상세·실패 요청 등 조건에 맞지 않는 행을 제외하기 때문이다.
+	상태를 숫자로 통일해 400 이상인지 같은 숫자 조건으로 비교하기 위해서다.
 </details>
-**확인문제 5.** if 아래에서만 total을 늘리는 이유는 무엇인가?
+**확인문제 5.** raw에는 무엇을 보관하는가?
 <details>
 <summary>정답과 해설</summary>
-	모든 기록이 아니라 네 조건을 만족한 기록만 세기 위해서다.
+	변환 전 앱 객체를 보관한다. 결과가 이상하면 원본 값과 대조할 수 있다.
 </details>
-**확인문제 6.** 관찰 구간 길이를 맞추는 이유는 무엇인가?
+**확인문제 6.** app-1은 동일 요청을 두 서버에서 연결하는 식별자인가?
 <details>
 <summary>정답과 해설</summary>
-	긴 시간 동안 세어 양이 늘어난 것을 같은 조건의 증가로 잘못 비교하지 않기 위해서다.
+	아니다. 이 목록에서 앱 원본 첫 행을 구분하는 이름이다. 요청의 동일성을 증명하지 않는다.
 </details>
-**확인문제 7.** 기준 10회에서 4건과 12건은 어떻게 표시되는가?
+**확인문제 7.** 파일을 저장한 뒤 확인 명령은 무엇인가?
 <details>
 <summary>정답과 해설</summary>
-	4건은미해당,12건은검토 후보다. 12가 10이상이기 때문이다.
+	프로젝트 CMD에서 docker compose exec -T monitor-api python -m learning.normalize\_app을 실행한다.
 </details>
-**확인문제 8.** 기준 20회에서 같은 12건이 달라지는 이유는 무엇인가?
+**확인문제 8.** /app-check를 연 뒤 이전 실행 결과가 저절로 바뀌는가?
 <details>
 <summary>정답과 해설</summary>
-	자료는그대로이고 12가 20미만이므로 이조건에는미해당이된다.
+	아니다. 명령을 다시 실행해야 현재 파일을 읽은 새 결과가 출력된다.
 </details>
-**확인문제 9.** True는 공격이 확정되었다는 뜻인가?
+**확인문제 9.** 404가 정규화 뒤 200으로 바뀌어야 하는가?
 <details>
 <summary>정답과 해설</summary>
-	아니다. 정한 조건에 맞는검토 후보이며 정상작업도 조회가많을수있다.
+	아니다. 원본 404를 유지한다. 정규화는 응답 결과를 바꾸는 작업이 아니다.
 </details>
-**확인문제 10.** 실제 HTTP에 적용할 때 과거 요청을 어떻게 제외하는가?
+**확인문제 10.** KeyError: status가 나오면 무엇을 비교하는가?
 <details>
 <summary>정답과 해설</summary>
-	새관찰시작에서현재마지막ID를읽고이후ID이면서최근 60초인기록만쓴다. 원본DB를삭제하지않는다.
+	원본 키와 코드의 키를 비교한다. 이 원본의 정확한 이름은 status\_code이다.
 </details>
-## 되새김 문제
-다음 질문에 말로 답할 수 있으면 이번 시간을 제대로 이해한 것이다.
-- 어떤 출처와 단위를 비교했는가?
-- 판정 기준과 근거는 무엇인가?
-- 이 결과만으로 확정할 수 없는 것은 무엇인가?
-다음 활동에서도 출처와 비교 기준을 확인하며 근거를 읽어 보자.
+앱 원본은 공통 항목으로 읽을 수 있다. 다음에는 항목 이름 없이 한 줄로 적힌 Nginx 기록에서 같은 값을 꺼낸다.

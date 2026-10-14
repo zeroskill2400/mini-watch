@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="570" viewBox="0 0 1000 570"><defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#286aa6"/></marker></defs><rect width="1000" height="570" fill="#f6f8fc"/><g font-family="Arial, Noto Sans KR, sans-serif" fill="#18324d"><text x="30" y="40" font-size="24" font-weight="bold">정상 기준에서 검토할 후보까지</text><rect x="40" y="85" width="420" height="120" rx="8" fill="#e3f4e9" stroke="#9db1c5"/><text x="60" y="120" font-size="22">정상 예제 · 60초</text><text x="60" y="164" font-size="19">GET / · 200 · post_list = 4건</text><rect x="540" y="85" width="420" height="120" rx="8" fill="#fff0de" stroke="#9db1c5"/><text x="560" y="120" font-size="22">비교 예제 · 60초</text><text x="560" y="164" font-size="19">GET / · 200 · post_list = 12건</text><path d="M250,213 L250,260" fill="none" stroke="#286aa6" stroke-width="3" marker-end="url(#arrow)"/><path d="M750,213 L750,260" fill="none" stroke="#286aa6" stroke-width="3" marker-end="url(#arrow)"/><rect x="40" y="265" width="920" height="110" rx="8" fill="#fff" stroke="#9db1c5"/><text x="60" y="300" font-size="21">같은 종류·같은 길이의 구간에서 조회 횟수를 비교</text><text x="60" y="342" font-size="21">기준10회: 4는 미해당 / 12는 검토 후보</text><rect x="40" y="405" width="920" height="100" rx="8" fill="#fff" stroke="#9db1c5"/><text x="60" y="440" font-size="21">기준20회로 바꾸면 같은12회도 미해당</text><text x="60" y="480" font-size="19">자료의 사실은 그대로이고 후보를 고르는 조건만 달라진다.</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="304" viewBox="-32 -32 1104 304" data-clean-canvas="32"><rect x="-32" y="-32" width="1104" height="304" fill="#ffffff" data-canvas-background="true"></rect>
+<rect width="1040" height="240" rx="18" fill="#ffffff"></rect>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#476b96"></path></marker></defs>
+<rect x="40.0" y="35" width="285.3333333333333" height="170" rx="14" fill="white" stroke="#c3d4e8" stroke-width="2"></rect>
+<text x="182.66666666666666" y="78" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="bold" fill="#173b63">앱 원본</text>
+<text x="182.66666666666666" y="122" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">GET /training-missing</text>
+<text x="182.66666666666666" y="154" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">status_code: 404</text>
+<path d="M333.3333333333333 120H367.3333333333333" stroke="#476b96" stroke-width="3" marker-end="url(#arrow)"></path>
+<rect x="377.3333333333333" y="35" width="285.3333333333333" height="170" rx="14" fill="white" stroke="#c3d4e8" stroke-width="2"></rect>
+<text x="520.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="bold" fill="#173b63">normalize_app</text>
+<text x="520.0" y="122" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">원본 값을 옮김</text>
+<text x="520.0" y="154" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">source: app 추가</text>
+<path d="M670.6666666666666 120H704.6666666666666" stroke="#476b96" stroke-width="3" marker-end="url(#arrow)"></path>
+<rect x="714.6666666666666" y="35" width="285.3333333333333" height="170" rx="14" fill="white" stroke="#c3d4e8" stroke-width="2"></rect>
+<text x="857.3333333333333" y="78" text-anchor="middle" font-family="sans-serif" font-size="23" font-weight="bold" fill="#173b63">공통 기록</text>
+<text x="857.3333333333333" y="122" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">app / GET / 404</text>
+<text x="857.3333333333333" y="154" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#334b64">경로·원본은 유지</text>
+</svg>
