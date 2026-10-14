@@ -164,6 +164,6 @@ docker compose exec -T monitor-api python -m learning.report
 **확인문제 10.** 새 요청 후 집계 결과를 확인하려면 무엇을 다시 실행하는가?
 <details>
 <summary>정답과 해설</summary>
-	learning.report를 다시 실행한다. 매 실행에서 현재 원본을 읽고 변환·집계한다.
+	`learning.report`를 다시 실행한다. 매 실행에서 현재 원본을 읽고 변환·집계한다.
 </details>
 수집된 원본을 읽어 변환·통합·집계하는 코드가 이어졌다. 마지막에는 이 결과를 준비된 감시 화면에서 읽고 새 행동까지 반영되는지 확인한다.
