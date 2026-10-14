@@ -83,7 +83,7 @@ docker compose exec -T monitor-api python -m learning.split_demo</code></pre>
 <pre><code class="language-python">status = &quot;404&quot;
 print(status &gt;= 400)</code></pre>
 <pre><code class="language-plain-text">TypeError: &#x27;&gt;=&#x27; not supported between instances of &#x27;str&#x27; and &#x27;int&#x27;</code></pre>
-<p>문자열과 정수는 이 방식으로 비교할 수 없다. int(status) &gt;= 400처럼 숫자로 바꾼 뒤 비교한다.</p>
+<p>문자열과 정수는 이 방식으로 비교할 수 없다. <code>int(status) &gt;= 400</code>처럼 숫자로 바꾼 뒤 비교한다.</p>
 </details>
 <h2>2단계. 실제 Nginx 변환 함수 완성하기</h2>
 <h3>원본을 공통 항목에 넣자</h3>

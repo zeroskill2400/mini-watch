@@ -136,7 +136,7 @@ docker compose exec -T monitor-api python -m learning.report</code></pre>
 <p>같은 조건으로 판단하기</p>
 <ol>
 <li><a href="http://localhost:8081">게시판 목록</a>을 연 뒤 learning.merge 명령을 다시 실행한다.</li>
-<li>GET /의 상태 200을 찾아 <code>report.py</code>의 status_code &gt;= 400 조건과 비교한다.</li>
+<li>GET /의 상태 200을 찾아 <code>report.py</code>의 <code>status_code &gt;= 400</code> 조건과 비교한다.</li>
 </ol>
 <p>200인 행은 전체 목록에는 남지만 오류 목록에는 들어가지 않는다. 기록을 삭제한 것이 아니라 조건을 만족한 행만 별도로 센 것이다.</p>
 <h2>확인문제</h2>
@@ -163,7 +163,7 @@ docker compose exec -T monitor-api python -m learning.report</code></pre>
 <p><strong>확인문제 5.</strong> 이번 오류 집계의 조건은 무엇인가?</p>
 <details>
 <summary>정답과 해설</summary>
-<p>status_code &gt;= 400이다. 정규화한 숫자 상태에 같은 조건을 쓴다.</p>
+<p><code>status_code &gt;= 400</code>이다. 정규화한 숫자 상태에 같은 조건을 쓴다.</p>
 </details>
 <p><strong>확인문제 6.</strong> 오류를 찾을 때 source를 먼저 구분해야 하는가?</p>
 <details>

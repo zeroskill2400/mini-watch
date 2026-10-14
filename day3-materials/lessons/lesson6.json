@@ -146,7 +146,7 @@
         },
         {
           "kind": "paragraph",
-          "text": "monitor/backend/routes/analysis.py에서 다음 부분을 찾자. API는 화면이 서버에 데이터를 요청하는 통로이며, 아래는 이미 제공된 함수의 읽기용 발췌다."
+          "text": "`monitor/backend/routes/analysis.py`에서 다음 부분을 찾자. API는 화면이 서버에 데이터를 요청하는 통로이며, 아래는 이미 제공된 함수의 읽기용 발췌다."
         },
         {
           "kind": "code",
