@@ -10,7 +10,7 @@
 프로젝트 폴더의 Windows CMD
 ```bash
 cd /d C:\work\mini-watch-m5d3
-docker compose restart monitor-api
+docker compose -f compose-monitor.yaml restart monitor-api
 ```
 다른 이름으로 clone했다면 위 폴더명도 실제 이름을 쓴다. 이 명령은 감시 앱만 다시 켜며 로그 파일이나 DB를 삭제하지 않는다. 이후 새 클릭을 조회할 때마다 재시작할 필요는 없다.
 통합 표 열기
@@ -27,7 +27,7 @@ nginx   GET    /training-missing     404
 	VS Code에서 지금 실행한 폴더가 맞는지 확인하고 `normalize_app.py`·`normalize_nginx.py`·`merge.py`·`report.py`를 모두 저장한다. 특히 `report.py`에 ready: False인 시작 코드가 남았는지 확인한 뒤 monitor-api를 다시 시작한다.
 	프로젝트 폴더의 Windows CMD
 	```bash
-docker compose exec -T monitor-api python -m learning.report
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.report
 	```
 	터미널에서도 오류가 나면 마지막 오류에 적힌 파일·항목을 확인한다. 원본이 비었다면 일반 게시판을 사용한 뒤 다시 조회한다.
 </details>
@@ -95,9 +95,15 @@ def analysis():
 ### 작업을 보존하고 마치자
 프로젝트 폴더의 Windows CMD
 ```bash
-docker compose stop
+docker compose -f compose-monitor.yaml stop
+docker compose -f compose-general.yaml stop
 ```
-실습 서비스를 멈추되 코드·로그·DB는 남긴다. 이어서 실행할 때는 같은 폴더에서 docker compose up -d를 사용한다.
+실습 서비스를 멈추되 코드·로그·DB는 남긴다. 이어서 실행할 때는 같은 프로젝트 폴더에서 아래 두 줄을 순서대로 실행한다.
+프로젝트 폴더의 Windows CMD
+```bash
+docker compose -f compose-general.yaml up -d --build --wait
+docker compose -f compose-monitor.yaml up -d --build --wait
+```
 ## 확인문제
 **확인문제 1.** 코드 저장 뒤 감시 앱을 한 번 재시작하는 이유는 무엇인가?
 <details>
@@ -147,6 +153,6 @@ docker compose stop
 **확인문제 10.** 실습을 멈추면서 데이터를 보존하려면 어떤 명령을 쓰는가?
 <details>
 <summary>정답과 해설</summary>
-	docker compose stop을 쓴다. 볼륨을 삭제하지 않으며 같은 폴더에서 다시 켤 수 있다.
+	`docker compose -f compose-monitor.yaml stop` 뒤에 `docker compose -f compose-general.yaml stop`을 실행한다. 볼륨을 삭제하지 않으며 같은 폴더에서 다시 켤 수 있다.
 </details>
 사이트 직접 사용 → 두 원본 확인 → 정규화 → 통합 조회가 이어졌다. 새 행동이 같은 흐름으로 반영되는 것을 확인한 것이 오늘의 최종 산출물이다.

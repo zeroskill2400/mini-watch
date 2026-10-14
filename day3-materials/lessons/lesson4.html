@@ -61,7 +61,7 @@ print(suffix.split()[0])</code></pre>
 404</code></pre>
 <p>프로젝트 폴더의 Windows CMD</p>
 <pre><code class="language-bash">cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.split_demo</code></pre>
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.split_demo</code></pre>
 <p>split에 큰따옴표와 2를 주면 앞에서 두 번만 나눠 세 조각이 된다. 가운데 request_text에는 요청이, suffix에는 요청 뒤의 상태와 나머지가 들어간다. suffix.split()은 공백을 기준으로 나눈다. 그 결과의 첫 값인 [0]이 상태 글자 404다. 앱처럼 항목 이름으로 읽는 대신 위치를 이용한 것이다.</p>
 <h3>요청의 방법과 경로도 꺼내자</h3>
 <p>같은 <code>split_demo.py</code>의 전체 내용을 아래로 바꾸고 같은 명령을 다시 실행하자. <code>split_demo.py</code> — 두 번째 전체 코드</p>
@@ -75,7 +75,7 @@ print(int(&quot;404&quot;) &gt;= 400)</code></pre>
 True</code></pre>
 <p>프로젝트 폴더의 Windows CMD</p>
 <pre><code class="language-bash">cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.split_demo</code></pre>
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.split_demo</code></pre>
 <p>세 조각은 방법·경로·통신 버전이다. protocol은 이번 표에 쓰지 않고, 상태는 int로 정수로 바꿔야 숫자 400과 비교할 수 있다.</p>
 <details>
 <summary>문자열을 숫자와 바로 비교하면</summary>
@@ -117,7 +117,7 @@ if __name__ == &quot;__main__&quot;:
         print(event[&quot;source&quot;], event[&quot;method&quot;], event[&quot;path&quot;], event[&quot;status_code&quot;])</code></pre>
 <p>방금 실행한 두 split이 함수 앞부분에 들어간다. source만 nginx로 구분하고, method·path·status_code는 앱 변환과 같은 이름으로 돌려준다. raw에는 원래 문자열을 보관한다. 아래 if __name__부터는 현재 파일을 읽고 결과를 출력하는 확인부다. 교안에서 사용하는 브라우저의 정상적인 combined 요청 형식을 대상으로 하며, 모든 종류의 손상된 로그를 처리하는 범용 파서는 아니다. 프로젝트 폴더의 Windows CMD</p>
 <pre><code class="language-bash">cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_nginx</code></pre>
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_nginx</code></pre>
 <pre><code class="language-plain-text">nginx GET /training-missing 404</code></pre>
 <p>출력 중 한 행의 예시다. 내 화면에서 같은 경로의 앱 결과와 비교하면 출처만 다르고 방법·경로·상태는 같은 항목으로 읽힌다.</p>
 <h2>3단계. 두 변환 결과를 같은 요청으로 확인하기</h2>
@@ -128,8 +128,8 @@ docker compose exec -T monitor-api python -m learning.normalize_nginx</code></pr
 </ol>
 <p>프로젝트 폴더의 Windows CMD</p>
 <pre><code class="language-bash">cd /d C:\work\mini-watch-m5d3
-docker compose exec -T monitor-api python -m learning.normalize_app
-docker compose exec -T monitor-api python -m learning.normalize_nginx</code></pre>
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app
+docker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_nginx</code></pre>
 <p>두 파일을 따로 읽던 방식은 달랐지만 변환 결과를 읽는 방식은 같아졌다. 다음에는 이 결과를 하나의 목록에 담아 한 조건으로 오류를 찾는다.</p>
 <h2>확인문제</h2>
 <p><strong>확인문제 1.</strong> Nginx 원본에서 먼저 어디를 나누는가?</p>

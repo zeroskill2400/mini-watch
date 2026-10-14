@@ -66,7 +66,7 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose exec -T monitor-api python -m learning.split_demo",
+          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.split_demo",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
@@ -98,7 +98,7 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose exec -T monitor-api python -m learning.split_demo",
+          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.split_demo",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
@@ -173,7 +173,7 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose exec -T monitor-api python -m learning.normalize_nginx",
+          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_nginx",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },
@@ -205,7 +205,7 @@
         {
           "kind": "command",
           "shell": "cmd",
-          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose exec -T monitor-api python -m learning.normalize_app\ndocker compose exec -T monitor-api python -m learning.normalize_nginx",
+          "src": "cd /d C:\\work\\mini-watch-m5d3\ndocker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_app\ndocker compose -f compose-monitor.yaml exec -T monitor-api python -m learning.normalize_nginx",
           "verified": "example",
           "label": "프로젝트 폴더의 Windows CMD"
         },

@@ -1,4 +1,4 @@
-name: m5d3-classroom
+name: m5d3-general
 services:
   general-db:
     image: postgres:16-bookworm
@@ -24,10 +24,6 @@ services:
     build: ./general
     volumes:
     - ./classroom-logs:/classroom-logs
-    command:
-    - sh
-    - -c
-    - python seed_classroom.py && exec waitress-serve --host=0.0.0.0 --port=$$PORT app:app
     environment:
       DB_HOST: general-db
       DB_PORT: '5432'
@@ -41,6 +37,11 @@ services:
     depends_on:
       general-db:
         condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
     networks:
     - general-front-net
     - general-data-net
@@ -55,12 +56,16 @@ services:
     networks:
     - general-front-net
     depends_on:
-    - general-api
+      general-api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/health]
+      interval: 3s
+      timeout: 3s
+      retries: 30
 volumes:
   general-data: {}
 networks:
   general-front-net: {}
   general-data-net: {}
-  events-net:
-    external: true
-    name: m5d3-classroom_events-net
+  events-net: {}

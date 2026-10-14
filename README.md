@@ -7,10 +7,13 @@
 Docker Desktop을 실행한 뒤 이 프로젝트 폴더의 터미널에서 실행합니다.
 
 ```text
-docker compose up -d --build
+docker compose -f compose-general.yaml up -d --build --wait
+docker compose -f compose-monitor.yaml up -d --build --wait
 ```
 
-한 명령이 일반 게시판과 감시 화면, 각 DB, 게이트웨이, 수업 계정을 준비합니다. 시작 명령은 실습 요청을 대신 보내거나 분석용 로그 묶음을 만들지 않습니다. 처음에는 원본이 비어 있어도 정상입니다.
+일반 서비스를 먼저 실행한 뒤 감시 서비스를 실행합니다. `m5d3-general`은 게시판용 3개, `m5d3-monitor`는 감시용 4개 컨테이너를 실행합니다. general이 공통 `m5d3-general_events-net` 네트워크를 자동으로 만들고 monitor가 같은 네트워크에 연결합니다. 네트워크를 별도 명령으로 만들 필요가 없습니다. DB와 화면의 내부 네트워크는 각 프로젝트에 분리됩니다.
+
+DB가 준비되면 각 API 컨테이너의 `init.py`가 기존 `seed_classroom.main`으로 수업 계정을 준비하고 웹서버를 실행합니다. 같은 계정이 있으면 기존 비밀번호를 유지합니다. DB 스키마 SQL은 새 볼륨의 첫 실행에만 자동 적용됩니다. 실습 요청이나 분석용 로그 묶음을 미리 만들지는 않습니다. 처음에는 원본이 비어 있어도 정상입니다.
 
 | 화면 | 주소 | 아이디 | 공개 실습 비밀번호 |
 |---|---|---|---|
@@ -61,16 +64,20 @@ docker compose up -d --build
 서비스 상태와 오류는 같은 프로젝트 폴더에서 확인합니다.
 
 ```text
-docker compose ps
-docker compose logs --tail 30 general-api general-gateway monitor-api
+docker compose ls
+docker compose -f compose-general.yaml ps
+docker compose -f compose-monitor.yaml ps
+docker compose -f compose-general.yaml logs --tail 30 general-api general-gateway
+docker compose -f compose-monitor.yaml logs --tail 30 monitor-api
 ```
 
 수업을 마치면 실행만 멈춥니다.
 
 ```text
-docker compose stop
+docker compose -f compose-monitor.yaml stop
+docker compose -f compose-general.yaml stop
 ```
 
-이 설정과 공개 비밀번호는 개인 PC 수업용입니다. 공개 포트는 `127.0.0.1:8081`·`127.0.0.1:8082`입니다. 이전 실습이 같은 포트를 사용 중이면 Docker Desktop에서 그 프로젝트만 Stop합니다. Day3는 `m5d3-classroom` 프로젝트와 전용 DB 볼륨을 사용하며, 기존 Day의 DB나 이전 Day3 볼륨을 지우지 않습니다. 재실행은 계정·게시글·DB·로그 파일을 보존합니다. 같은 이름의 계정이 있으면 기존 비밀번호를 유지합니다. `down -v`나 초기 SQL 재실행은 하지 않습니다.
+이 설정과 공개 비밀번호는 개인 PC 수업용입니다. 공개 포트는 `127.0.0.1:8081`·`127.0.0.1:8082`입니다. 이전 실습이 같은 포트를 사용 중이면 Docker Desktop에서 그 프로젝트만 Stop합니다. Day3는 `m5d3-general`·`m5d3-monitor` 두 프로젝트와 각각 자동 생성되는 전용 DB 볼륨을 사용하며, 기존 Day의 DB나 이전 Day3 볼륨을 지우지 않습니다. 재실행은 계정·게시글·DB·로그 파일을 보존합니다. 같은 이름의 계정이 있으면 기존 비밀번호를 유지합니다. `down -v`나 초기 SQL 재실행은 하지 않습니다.
 
-`start-class.cmd`·`start-class.sh`는 같은 Compose 명령을 실행하는 선택 편의 파일일 뿐 필수 절차가 아닙니다. 두 분리 Compose 파일은 호환용으로 남아 있으며, 수업에서는 기본 `compose.yaml`만 사용합니다.
+기본 `compose.yaml`은 사용하지 않습니다. `docker compose ps` 대신 `-f`로 확인할 파일을 지정하고, 두 프로젝트 전체 목록은 `docker compose ls`로 봅니다.
