@@ -19,10 +19,6 @@ services:
       retries: 20
   monitor-api:
     build: ./monitor/backend
-    command:
-    - sh
-    - -c
-    - python seed_classroom.py && exec waitress-serve --host=0.0.0.0 --port=$$PORT app:app
     volumes:
     - classroom-logs:/classroom-logs:ro
     - detection-state:/detection-state
@@ -86,4 +82,4 @@ networks:
   monitor-data-net: {}
   events-net:
     external: true
-    name: m5d4-events
+    name: m5d4-general_events-net

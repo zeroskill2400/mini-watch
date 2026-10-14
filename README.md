@@ -12,7 +12,8 @@ Windows PowerShell 또는 CMD:
 cd C:\work
 git clone --branch m5d4-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day4
 cd mini-watch-day4
-.\start-class.cmd
+docker compose -f compose-general.yaml up -d --build --wait
+docker compose -f compose-monitor.yaml up -d --build --wait
 ```
 
 Linux 또는 macOS:
@@ -22,12 +23,15 @@ mkdir -p ~/work
 cd ~/work
 git clone --branch m5d4-start --single-branch https://github.com/zeroskill2400/mini-watch.git mini-watch-day4
 cd mini-watch-day4
-sh start-class.sh
+docker compose -f compose-general.yaml up -d --build --wait
+docker compose -f compose-monitor.yaml up -d --build --wait
 ```
 
-이미 받은 폴더가 있다면 다시 clone하지 않고 그 폴더에서 시작 명령만 실행한다. Windows의 `C:\work`가 없다면 탐색기에서 먼저 만든다. 소스를 볼 때는 VS Code에서 파일 → 폴더 열기로 `mini-watch-day4`를 연다.
+이미 받은 폴더가 있다면 다시 clone하지 않고 그 폴더에서 위의 Docker 명령 두 줄만 실행한다. 일반 서비스를 먼저 켜고 완료된 뒤 감시 서비스를 켠다. Windows의 `C:\work`가 없다면 탐색기에서 먼저 만든다. 소스를 볼 때는 VS Code에서 파일 → 폴더 열기로 `mini-watch-day4`를 연다.
 
-첫 실행에서는 이미지를 내려받고 빌드하므로 인터넷 연결과 여유 시간이 필요하다. 시작 명령은 두 Compose를 실행하고 서비스가 정상 응답할 때까지 기다린다. 실패했으면 출력된 오류를 먼저 확인한다.
+첫 실행에서는 이미지를 내려받고 빌드하므로 인터넷 연결과 여유 시간이 필요하다. `--wait`는 서비스가 정상 응답할 때까지 기다린다. 첫 명령이 실패하면 두 번째 명령으로 넘어가지 말고 출력된 오류를 확인한다. 두 명령이 끝난 뒤 아래 주소를 연다.
+
+외부 시작 파일이나 네트워크·볼륨 생성 명령은 필요 없다. 일반 Compose가 공통 네트워크와 원본 로그 볼륨을 준비하고 감시 Compose가 함께 사용한다. 새 DB의 테이블은 PostgreSQL 이미지에 포함된 `docker-init.sql`이 초기화한다. 각 앱 컨테이너는 Dockerfile의 `CMD`로 내부 `init.py`를 실행해 준비 계정을 확인한 뒤 웹서버를 시작한다. 이미 있는 계정·DB·원본 기록은 다시 시작해도 지우지 않는다.
 
 | 사이트 | 주소 | 아이디 | 비밀번호 |
 | --- | --- | --- | --- |
@@ -74,11 +78,11 @@ Windows CMD에서는 작은따옴표 대신 큰따옴표로 `sh -c` 뒤를 감�
 ```bash
 docker compose -f compose-general.yaml ps
 docker compose -f compose-monitor.yaml ps
-docker compose -f compose-general.yaml down
 docker compose -f compose-monitor.yaml down
+docker compose -f compose-general.yaml down
 ```
 
-두 Compose 프로젝트는 `m5d4-general`·`m5d4-monitor`이며 API끼리 `m5d4-events` 네트워크를 사용한다. 원본은 공통 Docker 볼륨 `m5d4-classroom-logs`, 일반 DB·감시 DB·관찰 시작 정보는 별도 Day4 볼륨에 저장된다. 호스트 폴더 바인드 마운트는 사용하지 않는다. Day3의 컨테이너·8081/8082 포트·DB·원본·로그인 쿠키와 분리했다.
+두 Compose 프로젝트는 `m5d4-general`·`m5d4-monitor`이며 API끼리 `m5d4-general_events-net` 네트워크를 사용한다. 이 공통 네트워크는 일반 Compose가 만들므로 시작은 일반 → 감시, 종료는 감시 → 일반 순서다. 원본은 기존과 같은 공통 Docker 볼륨 `m5d4-classroom-logs`, 일반 DB·감시 DB·관찰 시작 정보는 별도 Day4 볼륨에 저장된다. 호스트 폴더 바인드 마운트는 사용하지 않는다. Day3의 컨테이너·8081/8082 포트·DB·원본·로그인 쿠키와 분리했다.
 
 `down`은 컨테이너와 프로젝트 내부 네트워크만 내린다. 다시 시작하면 DB·원본·관찰 기록이 남는다. 새 수업 관찰은 화면의 **새 관찰 시작**으로 시작한다. `down -v`나 `docker volume rm`은 필요 없다.
 

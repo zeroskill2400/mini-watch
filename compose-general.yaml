@@ -21,10 +21,6 @@ services:
     build: ./general
     volumes:
     - classroom-logs:/classroom-logs
-    command:
-    - sh
-    - -c
-    - python seed_classroom.py && exec waitress-serve --host=0.0.0.0 --port=$$PORT app:app
     environment:
       DB_HOST: general-db
       DB_PORT: '5432'
@@ -68,11 +64,8 @@ services:
 volumes:
   general-data: {}
   classroom-logs:
-    external: true
     name: m5d4-classroom-logs
 networks:
   general-front-net: {}
   general-data-net: {}
-  events-net:
-    external: true
-    name: m5d4-events
+  events-net: {}
