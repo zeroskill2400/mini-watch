@@ -1,4 +1,4 @@
-name: m5d1-general
+name: m5d3-classroom
 services:
   general-db:
     image: postgres:16-bookworm
@@ -24,7 +24,6 @@ services:
     build: ./general
     volumes:
     - ./classroom-logs:/classroom-logs
-    - ./monitor/backend/learning/data:/classroom-data
     command:
     - sh
     - -c
@@ -64,4 +63,4 @@ networks:
   general-data-net: {}
   events-net:
     external: true
-    name: m5d1-events
+    name: m5d3-classroom_events-net

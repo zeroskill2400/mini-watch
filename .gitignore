@@ -1,8 +1,16 @@
 venv/
 .venv/
 .env
+.env.*
+!.env.example
 __pycache__/
-*.pyc
+*.py[cod]
 node_modules/
+.next/
 dist/
 .DS_Store
+*.log
+classroom-logs/*
+!classroom-logs/.gitignore
+!classroom-logs/.gitkeep
+monitor/backend/learning/data/case.json

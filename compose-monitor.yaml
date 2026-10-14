@@ -1,4 +1,4 @@
-name: m5d1-monitor
+name: m5d3-classroom
 services:
   monitor-db:
     image: postgres:16-bookworm
@@ -28,6 +28,7 @@ services:
     - python seed_classroom.py && exec waitress-serve --host=0.0.0.0 --port=$$PORT app:app
     volumes:
     - ./monitor/backend/learning:/app/learning
+    - ./classroom-logs:/classroom-logs:ro
     environment:
       DB_HOST: monitor-db
       DB_PORT: '5432'
@@ -36,6 +37,7 @@ services:
       DB_PASSWORD: sample-only-pass
       EVENT_TOKEN: local-sample-event-token-not-for-public-deployment
       SECRET_KEY: sample-monitor-session-key-not-for-production
+      CLASSROOM_LOG_DIR: /classroom-logs
     depends_on:
       monitor-db:
         condition: service_healthy
@@ -63,6 +65,4 @@ volumes:
 networks:
   monitor-front-net: {}
   monitor-data-net: {}
-  events-net:
-    external: true
-    name: m5d1-events
+  events-net: {}

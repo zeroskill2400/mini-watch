@@ -1,29 +1,32 @@
 # mini-watch — 5과목 Day3 수업 시작본
 
-같은 실제 HTTP 요청을 Flask JSON과 Nginx 텍스트로 확인한 뒤 공통 형식으로 바꾸고 한 표에서 조회합니다. **SIEM의 수집·정규화·통합 조회 일부**를 만드는 수업입니다. 자동 대응(SOAR)이나 여러 보안 제품을 연결한 XDR을 구현하지 않습니다.
+일반 게시판에서 직접 로그인·조회·없는 주소 요청을 해 보고, Flask JSON과 Nginx 텍스트에 남은 기록을 공통 형식으로 바꿉니다. **SIEM의 로그 정규화·통합 조회 일부**를 만드는 수업입니다. 자동 차단이나 XDR 전체를 구현하지 않습니다.
 
 ## 시작
 
-Docker Desktop을 실행한 뒤 이 프로젝트 폴더의 CMD에서 실행합니다.
-
-```cmd
-start-class.cmd
-```
-
-macOS·Linux에서는 `sh start-class.sh`를 실행합니다. 준비 스크립트가 네트워크·두 Compose·수업 계정·서버 준비 확인·실제 로그 수집까지 진행합니다. 수집이 끝날 때까지 일반 게시판을 클릭하지 않습니다.
+Docker Desktop을 실행한 뒤 이 프로젝트 폴더의 터미널에서 실행합니다.
 
 ```text
-실제 요청 2건을 보냈습니다: GET / 200, GET /training-missing 404
-원본 저장: Flask JSON 2행 + Nginx combined 2행
-monitor/backend/learning/data/case.json 준비 완료
+docker compose up -d --build
 ```
+
+한 명령이 일반 게시판과 감시 화면, 각 DB, 게이트웨이, 수업 계정을 준비합니다. 시작 명령은 실습 요청을 대신 보내거나 분석용 로그 묶음을 만들지 않습니다. 처음에는 원본이 비어 있어도 정상입니다.
 
 | 화면 | 주소 | 아이디 | 공개 실습 비밀번호 |
 |---|---|---|---|
 | 일반 게시판 | http://localhost:8081/login | `class-student` | `classroom1234!` |
 | 감시 화면 | http://localhost:8082 | `class-operator` | `classroom1234!` |
 
-각 화면에서 아이디·비밀번호를 입력하고 `로그인`을 누릅니다. 일반 목록의 `class-student 님이 로그인했습니다.`, 감시 화면의 `class-operator 사용자`로 성공을 확인합니다.
+각 화면에서 아이디·비밀번호를 입력하고 `로그인`을 누릅니다. 일반 목록의 `class-student 님이 로그인했습니다.`, 감시 화면의 `class-operator 사용자`로 성공을 확인합니다. 첫 빌드 직후 화면이 아직 열리지 않으면 잠시 기다린 뒤 다시 엽니다.
+
+## 직접 동작하고 기록 확인하기
+
+1. 일반 게시판에서 로그인한 뒤 목록을 엽니다.
+2. 브라우저 주소창에 `http://localhost:8081/training-missing`을 입력해 없는 경로의 404 응답을 확인합니다.
+3. 감시 화면에서 원본을 다시 불러와 해당 경로와 상태가 두 출처에 남았는지 확인합니다.
+4. 3~5교시에서 네 함수를 완성한 뒤 분석 결과를 다시 불러옵니다. 일반 게시판에서 동작을 추가하고 다시 불러오면 현재 로그로 결과가 바뀝니다.
+
+자동 새로고침은 하지 않습니다. 로그인 뒤 이동·화면 파일·브라우저의 추가 요청도 기록되므로 클릭 수와 로그 행 수는 같지 않습니다. 앱과 Nginx가 각 요청을 기록하므로 관측 행 수를 요청 수나 공격 수로 읽지 않습니다.
 
 ## 수업에서 작성할 파일
 
@@ -31,30 +34,43 @@ monitor/backend/learning/data/case.json 준비 완료
 
 | 교시 | 파일 | 결과 |
 |---|---|---|
-| 2 | `normalize_app.py` | Flask JSON 2행을 공통 형식으로 변환 |
-| 3 | `normalize_nginx.py` | Nginx 텍스트 2행을 같은 형식으로 변환 |
-| 4 | `merge.py` | 두 출처의 관측 4행을 한 목록으로 연결 |
-| 5 | `report.py` | 전체 관측 4행·오류 관측 2행 집계 |
-| 6 | 제공된 분석 화면 | 출처·오류 필터·원본 펼쳐 보기 확인 |
+| 3 | `normalize_app.py` | 현재 Flask JSON 원본을 공통 항목으로 변환 |
+| 4 | `normalize_nginx.py` | 현재 Nginx 텍스트 원본을 같은 항목으로 변환 |
+| 5 | `merge.py` | 두 출처의 관측을 한 목록으로 연결 |
+| 5 | `report.py` | 전체 관측과 상태 400 이상인 오류 관측 집계 |
+| 6 | 제공된 감시 화면 | 추가 동작 전후 비교·출처/오류 필터·원본 확인 |
 
-시작본의 네 함수는 빈 틀입니다. 앱·로그 수집기·로그인·분석 API·React 화면은 준비되어 있습니다. 각 교시의 전체 코드를 저장하며 빈 틀을 채웁니다.
+시작본의 네 함수는 빈 틀입니다. 앱·로그인·원본 읽기·API·화면은 준비되어 있습니다. 정규화 함수가 비어 있어도 원본부터 확인하고, 각 교시에서 전체 코드를 저장해 완성합니다.
 
-공통 필드는 `id/source/time/method/path/status_code/raw`입니다. 앱 원본에 시각이 없으므로 `time=None`으로 두고 추정하지 않습니다. Nginx 시각은 시간대가 있는 원본을 UTC ISO로 변환합니다. `raw`에는 원본을 그대로 남깁니다.
+공통 항목은 `id/source/method/path/status_code/raw`입니다. 앱 원본에 없는 시각을 만들지 않으며, Nginx의 원본 시각은 `raw`에 남깁니다. `app-1`·`nginx-1`은 각 출처 파일의 행 번호이지 공통 요청 ID가 아닙니다.
 
-요청 2건을 두 시스템이 각각 남겼으므로 관측은 4행입니다. 오류 관측 2행도 같은 404 요청을 각 출처가 기록한 결과이며, 공격 2건이나 서로 다른 사용자 2명을 뜻하지 않습니다. `app-1`·`nginx-1`은 스냅샷 안의 출처별 행 번호이지 공통 요청 ID가 아닙니다.
+## 준비된 코드의 역할
 
-## 제공된 준비 코드
+- `general/request_logging.py`: 일반 게시판 응답의 방법·경로·상태를 JSONL에 추가하고 기존 감시 DB에도 전송합니다.
+- `gateways/general.conf`: 일반 게시판 앞 Nginx가 자신의 접근 로그를 남깁니다.
+- `learning/log_data.py`: 공유된 두 로그 파일의 현재 내용을 읽습니다. 새 요청을 보내거나 원본을 수정하지 않습니다.
+- `GET /api/analysis/raw`: 로그인한 운영자에게 현재 원본을 반환합니다. 정규화 함수가 미완성이어도 읽을 수 있습니다.
+- `GET /api/analysis`: 학생이 작성한 함수로 현재 원본을 정규화·합치기·집계합니다.
 
-- `general/request_logging.py`: 응답 정보 JSON을 출력·전송하고, Compose의 `REQUEST_LOG_PATH`가 있을 때만 같은 JSONL을 추가 기록합니다.
-- `gateways/general.conf`: Nginx의 실제 combined 접근 로그를 기록합니다.
-- `general/collect_classroom.py`: 일반 게이트웨이에 실제 요청 2건을 보내고 두 원본을 검증해 `case.json`에 저장합니다.
-- `classroom_data.py`: 학생 코드가 같은 `case.json`을 읽는 공통 함수입니다.
-- `routes/analysis.py`·`AnalysisClient.js`: 로그인한 사용자의 보고서를 화면으로 연결합니다.
+원본 파일은 프로젝트의 `classroom-logs/app.jsonl`과 `classroom-logs/nginx.log`입니다. 일반 앱·Nginx만 쓰고 감시 API는 읽기 전용으로 공유합니다. 파일이 아직 없으면 빈 목록으로 표시하고, 기록 중인 마지막 미완성 줄은 다음 조회에서 읽습니다. 두 파일을 읽는 사이 새 요청이 들어오면 출처별 행 수가 잠시 다를 수 있습니다.
 
-프로젝트의 `classroom-logs`는 일반 앱·Nginx가 공유하고, `monitor/backend/learning/data`는 수집기·분석 앱·PC에서 함께 사용합니다. 원본이 없거나 다른 요청이 섞이면 준비가 실패하며 예제값으로 대신하지 않고 기존 `case.json`을 보존합니다.
+기존 `/api/events`는 Flask가 전송한 DB 요청 기록이며 두 출처의 통합 분석과 입력 경로가 다릅니다. 통합 분석은 DB나 고정 `case.json`이 아닌 현재 두 원본 파일을 사용합니다.
 
-이 설정과 공개 비밀번호는 개인 PC 수업용입니다. 공개 포트는 `127.0.0.1:8081`·`127.0.0.1:8082`만 사용합니다. 재실행해도 기존 계정·비밀번호·게시글·DB 기록·볼륨을 삭제하지 않습니다. `down -v`나 초기 SQL 재실행은 필요 없습니다.
+## 실행 상태와 보존
 
-## 시작본 범위
+서비스 상태와 오류는 같은 프로젝트 폴더에서 확인합니다.
 
-`m5d3-start`는 준비 코드와 빈 함수 틀을 제공하는 시작본입니다. 2~5교시의 전체 코드를 순서대로 작성하고 6교시에서 통합 화면을 확인합니다. 이 브랜치는 학생이 작성할 네 함수의 완성 답안을 제공하지 않습니다.
+```text
+docker compose ps
+docker compose logs --tail 30 general-api general-gateway monitor-api
+```
+
+수업을 마치면 실행만 멈춥니다.
+
+```text
+docker compose stop
+```
+
+이 설정과 공개 비밀번호는 개인 PC 수업용입니다. 공개 포트는 `127.0.0.1:8081`·`127.0.0.1:8082`입니다. 이전 실습이 같은 포트를 사용 중이면 Docker Desktop에서 그 프로젝트만 Stop합니다. Day3는 `m5d3-classroom` 프로젝트와 전용 DB 볼륨을 사용하며, 기존 Day의 DB나 이전 Day3 볼륨을 지우지 않습니다. 재실행은 계정·게시글·DB·로그 파일을 보존합니다. 같은 이름의 계정이 있으면 기존 비밀번호를 유지합니다. `down -v`나 초기 SQL 재실행은 하지 않습니다.
+
+`start-class.cmd`·`start-class.sh`는 같은 Compose 명령을 실행하는 선택 편의 파일일 뿐 필수 절차가 아닙니다. 두 분리 Compose 파일은 호환용으로 남아 있으며, 수업에서는 기본 `compose.yaml`만 사용합니다.

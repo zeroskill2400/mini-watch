@@ -1,4 +1,4 @@
-from learning.classroom_data import read_case
+from learning.log_data import read_logs
 from learning.normalize_app import normalize_app
 from learning.normalize_nginx import normalize_nginx
 
