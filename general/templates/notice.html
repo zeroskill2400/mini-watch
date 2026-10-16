@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>수업 공지 | mini-watch</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>수업 공지</h1>
+    <p>{{ login_user.username }} 님이 로그인했습니다.</p>
+    <p>저장하면 <code>{{ notice.target_path }}</code> 파일 내용이 바뀝니다. 게시글 DB와는 별개입니다.</p>
+    {% if notice.policy.blocked %}
+    <p class="error" role="status">공지 변경이 제한되어 있습니다. 현재 내용 조회와 로그인은 가능합니다.</p>
+    {% endif %}
+    {% if message %}<p role="status">{{ message }}</p>{% endif %}
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    {% if response_status is not none %}
+    <p id="notice-response-status" role="status">저장 요청 결과: HTTP {{ response_status }}</p>
+    {% endif %}
+    <form action="/notice" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <p>
+            <label for="notice-content">공지 내용</label>
+            <textarea id="notice-content" name="content" rows="6" maxlength="4000" required>{{ notice.content }}</textarea>
+        </p>
+        <button type="submit">공지 저장</button>
+    </form>
+    <h2>현재 저장된 내용</h2>
+    <pre class="post-body">{{ notice.content }}</pre>
+    <p>현재 SHA-256: <code style="overflow-wrap: anywhere">{{ notice.sha256 }}</code></p>
+    <p>파일 수정 시각: {{ notice.modified_at }}</p>
+    <p>내용을 그대로 저장하면 변경 기록은 생기지 않습니다. 센서 관측이 아직 보이지 않으면 감시 화면을 새로고침하세요.</p>
+    <form action="/logout" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">로그아웃</button>
+    </form>
+    <p><a href="/">일반 서비스로</a></p>
+</body>
+</html>

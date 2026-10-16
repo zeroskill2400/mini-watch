@@ -1,0 +1,94 @@
+name: m5d5-general
+services:
+  general-db:
+    build: ./general/sql
+    environment:
+      POSTGRES_DB: general_db
+      POSTGRES_USER: sample
+      POSTGRES_PASSWORD: sample-only-pass
+    volumes:
+    - general-data:/var/lib/postgresql/data
+    networks:
+    - general-data-net
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U sample -d general_db
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  general-api:
+    build: ./general
+    volumes:
+    - classroom-logs:/classroom-logs
+    - notice-state:/classroom-data
+    environment:
+      DB_HOST: general-db
+      DB_PORT: '5432'
+      DB_NAME: general_db
+      DB_USER: sample
+      DB_PASSWORD: sample-only-pass
+      EVENT_TOKEN: day5-local-event-token-not-for-public-deployment
+      SECRET_KEY: day5-general-session-key-not-for-production
+      MONITOR_URL: http://monitor-api:5000/api/events
+      REQUEST_LOG_PATH: /classroom-logs/app.jsonl
+      CLASSROOM_DATA_DIR: /classroom-data
+      CLASSROOM_SERVER_ID: general-01
+    depends_on:
+      general-db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks:
+    - general-front-net
+    - general-data-net
+    - events-net
+  file-sensor:
+    build: ./sensor
+    network_mode: none
+    volumes:
+    - notice-state:/classroom-data:ro
+    - classroom-logs:/classroom-logs
+    environment:
+      CLASSROOM_DATA_DIR: /classroom-data
+      CLASSROOM_LOG_DIR: /classroom-logs
+      CLASSROOM_SERVER_ID: general-01
+    depends_on:
+      general-api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, sensor.py, --healthcheck]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  general-gateway:
+    build:
+      context: ./gateways
+      dockerfile: Dockerfile.general
+    ports:
+    - 127.0.0.1:8085:80
+    volumes:
+    - classroom-logs:/classroom-logs
+    networks:
+    - general-front-net
+    depends_on:
+      general-api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/health]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+volumes:
+  general-data: {}
+  notice-state:
+    name: m5d5-notice-state
+  classroom-logs:
+    name: m5d5-classroom-logs
+networks:
+  general-front-net: {}
+  general-data-net: {}
+  events-net: {}

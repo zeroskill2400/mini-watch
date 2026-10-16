@@ -1,0 +1,89 @@
+name: m5d5-monitor
+services:
+  monitor-db:
+    build: ./monitor/backend/sql
+    environment:
+      POSTGRES_DB: monitor_db
+      POSTGRES_USER: sample
+      POSTGRES_PASSWORD: sample-only-pass
+    volumes:
+    - monitor-data:/var/lib/postgresql/data
+    networks:
+    - monitor-data-net
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U sample -d monitor_db
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  monitor-api:
+    build: ./monitor/backend
+    volumes:
+    - classroom-logs:/classroom-logs:ro
+    - detection-state:/detection-state
+    - ./monitor/backend/soar_rules.py:/app/soar_rules.py:ro
+    environment:
+      DB_HOST: monitor-db
+      DB_PORT: '5432'
+      DB_NAME: monitor_db
+      DB_USER: sample
+      DB_PASSWORD: sample-only-pass
+      EVENT_TOKEN: day5-local-event-token-not-for-public-deployment
+      SECRET_KEY: day5-monitor-session-key-not-for-production
+      CLASSROOM_LOG_DIR: /classroom-logs
+      DETECTION_STATE_PATH: /detection-state/observations.sqlite3
+      SOAR_STATE_PATH: /detection-state/soar.sqlite3
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+    depends_on:
+      monitor-db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks:
+    - monitor-front-net
+    - monitor-data-net
+    - events-net
+  monitor-web:
+    build: ./monitor/next-frontend
+    networks:
+    - monitor-front-net
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000').then(response => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1));"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  monitor-gateway:
+    build:
+      context: ./gateways
+      dockerfile: Dockerfile.monitor
+    ports:
+    - 127.0.0.1:8086:80
+    networks:
+    - monitor-front-net
+    depends_on:
+      monitor-api:
+        condition: service_healthy
+      monitor-web:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+volumes:
+  monitor-data: {}
+  detection-state: {}
+  classroom-logs:
+    external: true
+    name: m5d5-classroom-logs
+networks:
+  monitor-front-net: {}
+  monitor-data-net: {}
+  events-net:
+    external: true
+    name: m5d5-general_events-net
